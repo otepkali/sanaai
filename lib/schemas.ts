@@ -44,6 +44,7 @@ export const compareFormSchema = z.object({
 export type CompareFormValues = z.infer<typeof compareFormSchema>;
 
 export const invoiceLineItemSchema = z.object({
+  code: z.string().optional(),
   name: z.string().min(1, "Укажите наименование"),
   unit: z.string().min(1, "Укажите единицу измерения"),
   quantity: z.number().min(0, "Не может быть отрицательным").max(1_000_000),

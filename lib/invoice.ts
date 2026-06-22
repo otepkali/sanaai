@@ -6,6 +6,8 @@ import { tengeAmountToWords } from "./number-to-words";
 export type InvoiceEntityType = "too" | "ip";
 
 export interface InvoiceLineItem {
+  /** Код/артикул товара — необязателен, чисто справочный */
+  code?: string;
   name: string;
   unit: string;
   quantity: number;

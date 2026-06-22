@@ -13,7 +13,7 @@ const TAB_TRIGGER_CLASS =
 export default function Home() {
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="border-b border-border bg-gradient-to-b from-white to-surface-tint">
+      <header className="border-b border-border bg-gradient-to-b from-white to-surface-tint print:hidden">
         <div className="container flex items-center justify-between py-6">
           <div className="flex items-center gap-3">
             <Image src="/logo.png" alt="Sana Ai" width={160} height={60} className="h-9 w-auto" priority />
@@ -36,7 +36,7 @@ export default function Home() {
 
       <main className="container flex-1 py-8">
         <Tabs defaultValue="payroll">
-          <TabsList className="h-auto flex-wrap gap-1 bg-surface-tint p-1">
+          <TabsList className="h-auto flex-wrap gap-1 bg-surface-tint p-1 print:hidden">
             <TabsTrigger value="payroll" className={TAB_TRIGGER_CLASS}>
               ФОТ
             </TabsTrigger>
@@ -72,7 +72,7 @@ export default function Home() {
         </Tabs>
       </main>
 
-      <footer className="border-t border-border bg-surface-tint/60">
+      <footer className="border-t border-border bg-surface-tint/60 print:hidden">
         <div className="container py-6 text-xs leading-relaxed text-text-muted">
           Калькулятор носит справочный характер. Ставки актуальны на 2026 год. Для официальных
           расчётов сверяйтесь с Налоговым кодексом РК и консультируйтесь с бухгалтером.
