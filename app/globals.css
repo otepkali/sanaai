@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff; /* основной фон — белый */
+  --surface: #ffffff; /* карточки */
+  --surface-tint: #f0fbfa; /* очень светлый Tiffany для полос/секций */
+  --primary: #0abab5; /* Tiffany Blue — главный акцент */
+  --primary-hover: #09a6a1;
+  --primary-soft: #81d8d0; /* robin-egg, для бейджей и градиентов */
+  --primary-bg: #e8f8f7; /* фон активных/выделенных элементов */
+  --text: #0f172a; /* почти чёрный текст */
+  --text-muted: #64748b; /* подписи, второстепенное */
+  --border: #e2e8f0;
+  --success: #16a34a; /* «выгодно» / в пределах нормы */
+  --warning: #f59e0b; /* приближение к лимиту */
+  --danger: #dc2626; /* превышение лимита */
+  --ring: #0abab5; /* фокус-кольцо на полях */
+
+  --radius: 1rem;
+}
+
+.dark {
+  --background: #0b1120;
+  --surface: #111827;
+  --surface-tint: #0f2624;
+  --primary: #2dd4cf;
+  --primary-hover: #5ee4df;
+  --primary-soft: #2f6e69;
+  --primary-bg: #103230;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border: #1f2937;
+  --success: #22c55e;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --ring: #2dd4cf;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .font-tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+}

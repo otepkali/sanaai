@@ -1,0 +1,147 @@
+import { TAX_2026, type BenefitCategory } from "./tax-config-2026";
+
+export type PayrollMode = "too_our" | "ip";
+
+export interface PayrollInput {
+  /** Начисленный оклад («грязными»), тенге/мес */
+  grossSalary: number;
+  mode?: PayrollMode;
+  /** Применять ли стандартный вычет 30 МРП */
+  applyStandardDeduction?: boolean;
+  benefitCategory?: BenefitCategory;
+  /** Лица, рождённые до 01.01.1975, освобождены от ОПВР */
+  bornBeforeJan1975?: boolean;
+  /**
+   * Совокупный годовой доход для проверки порога прогрессивной ставки ИПН
+   * (8 500 МРП). По умолчанию — оклад × 12.
+   */
+  annualIncome?: number;
+}
+
+export interface PayrollResult {
+  grossSalary: number;
+  mode: PayrollMode;
+  benefitCategory: BenefitCategory;
+
+  // Удержания с работника
+  opv: number;
+  vosms: number;
+  standardDeduction: number;
+  disabilityDeductionMonthly: number;
+  ipnBase: number;
+  ipnRate: number;
+  ipn: number;
+  /** Сумма «на руки» */
+  netIncome: number;
+
+  // За счёт работодателя, сверх оклада
+  so: number;
+  oosms: number;
+  opvr: number;
+  sn: number;
+  /** Полная стоимость работника для работодателя */
+  employerCost: number;
+
+  isProgressiveIpn: boolean;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+export function calculatePayroll(input: PayrollInput): PayrollResult {
+  const {
+    grossSalary,
+    mode = "too_our",
+    applyStandardDeduction = true,
+    benefitCategory = "none",
+    bornBeforeJan1975 = false,
+    annualIncome,
+  } = input;
+
+  // Пенсионеры освобождены от ОПВ, ВОСМС и СО.
+  const exemptFromPensionAndSocial = benefitCategory === "pensioner";
+  // Студенты-очники и пенсионеры не платят взносы на медстрахование (ВОСМС/ООСМС).
+  const exemptFromMedical = benefitCategory === "pensioner" || benefitCategory === "student";
+  const isDisabled = benefitCategory === "disabled";
+
+  // 1. ОПВ = 10% × min(оклад, 50 × МЗП)
+  const opv = exemptFromPensionAndSocial
+    ? 0
+    : TAX_2026.OPV * Math.min(grossSalary, TAX_2026.OPV_CEILING_MZP * TAX_2026.MZP);
+
+  // 2. ВОСМС = 2% × min(оклад, 20 × МЗП)
+  const vosms = exemptFromMedical
+    ? 0
+    : TAX_2026.VOSMS * Math.min(grossSalary, TAX_2026.VOSMS_CEILING_MZP * TAX_2026.MZP);
+
+  const standardDeduction = applyStandardDeduction
+    ? TAX_2026.STANDARD_DEDUCTION_MRP * TAX_2026.MRP
+    : 0;
+
+  // Доп. вычет 882 МРП/год для инвалидов I-III групп пересчитан в месячный.
+  const disabilityDeductionMonthly = isDisabled
+    ? (TAX_2026.DISABILITY_DEDUCTION_MRP * TAX_2026.MRP) / 12
+    : 0;
+
+  // 3. База ИПН = max(0, оклад − ОПВ − ВОСМС − вычеты)
+  const ipnBase = Math.max(
+    0,
+    grossSalary - opv - vosms - standardDeduction - disabilityDeductionMonthly
+  );
+
+  const effectiveAnnualIncome = annualIncome ?? grossSalary * 12;
+  const isProgressiveIpn =
+    effectiveAnnualIncome > TAX_2026.IPN_PROGRESSIVE_THRESHOLD_MRP * TAX_2026.MRP;
+  const ipnRate = isProgressiveIpn ? TAX_2026.IPN_PROGRESSIVE : TAX_2026.IPN;
+
+  // 4. ИПН
+  const ipn = ipnRate * ipnBase;
+
+  // 5. На руки = оклад − ОПВ − ВОСМС − ИПН
+  const netIncome = grossSalary - opv - vosms - ipn;
+
+  // 6. СО = 5% × clamp(оклад − ОПВ, 1×МЗП, 7×МЗП)
+  const so = exemptFromPensionAndSocial
+    ? 0
+    : TAX_2026.SO *
+      clamp(
+        grossSalary - opv,
+        TAX_2026.SO_FLOOR_MZP * TAX_2026.MZP,
+        TAX_2026.SO_CEILING_MZP * TAX_2026.MZP
+      );
+
+  // 7. ООСМС = 3% × min(оклад, 40 × МЗП)
+  const oosms = exemptFromMedical
+    ? 0
+    : TAX_2026.OOSMS * Math.min(grossSalary, TAX_2026.OOSMS_CEILING_MZP * TAX_2026.MZP);
+
+  // 8. ОПВР = 3,5% × оклад (не начисляется для рождённых до 01.01.1975)
+  const opvr = bornBeforeJan1975 ? 0 : TAX_2026.OPVR * grossSalary;
+
+  // 9. СН = max(0, 6% × (оклад − ОПВ − ВОСМС) − СО)
+  const sn = Math.max(0, TAX_2026.SN * (grossSalary - opv - vosms) - so);
+
+  // 10. Полная стоимость для работодателя
+  const employerCost = grossSalary + so + oosms + opvr + sn;
+
+  return {
+    grossSalary,
+    mode,
+    benefitCategory,
+    opv,
+    vosms,
+    standardDeduction,
+    disabilityDeductionMonthly,
+    ipnBase,
+    ipnRate,
+    ipn,
+    netIncome,
+    so,
+    oosms,
+    opvr,
+    sn,
+    employerCost,
+    isProgressiveIpn,
+  };
+}
