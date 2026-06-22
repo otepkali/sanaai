@@ -5,6 +5,7 @@ import { PayrollCalculator } from "@/components/calculators/PayrollCalculator";
 import { SimplifiedCalculator } from "@/components/calculators/SimplifiedCalculator";
 import { VatCalculator } from "@/components/calculators/VatCalculator";
 import { CompareCalculator } from "@/components/calculators/CompareCalculator";
+import { InvoiceCalculator } from "@/components/calculators/InvoiceCalculator";
 
 const TAB_TRIGGER_CLASS =
   "rounded-md px-3 py-1.5 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm";
@@ -48,6 +49,9 @@ export default function Home() {
             <TabsTrigger value="compare" className={TAB_TRIGGER_CLASS}>
               Сравнение режимов
             </TabsTrigger>
+            <TabsTrigger value="invoice" className={TAB_TRIGGER_CLASS}>
+              Счёт на оплату
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="payroll" className="mt-6">
@@ -61,6 +65,9 @@ export default function Home() {
           </TabsContent>
           <TabsContent value="compare" className="mt-6">
             <CompareCalculator />
+          </TabsContent>
+          <TabsContent value="invoice" className="mt-6">
+            <InvoiceCalculator />
           </TabsContent>
         </Tabs>
       </main>
