@@ -42,21 +42,3 @@ export const compareFormSchema = z.object({
 });
 
 export type CompareFormValues = z.infer<typeof compareFormSchema>;
-
-export const invoiceLineItemSchema = z.object({
-  code: z.string().optional(),
-  name: z.string().min(1, "Укажите наименование"),
-  unit: z.string().min(1, "Укажите единицу измерения"),
-  quantity: z.number().min(0, "Не может быть отрицательным").max(1_000_000),
-  unitPrice: z.number().min(0, "Не может быть отрицательной").max(1_000_000_000_000),
-});
-
-export const invoiceFormSchema = z.object({
-  items: z.array(invoiceLineItemSchema).min(1, "Добавьте хотя бы одну позицию"),
-  isVatPayer: z.boolean(),
-  vatMode: z.enum(["exclusive", "inclusive"]),
-  entityType: z.enum(["too", "ip"]),
-  expenseSharePercent: z.number().min(0).max(100),
-});
-
-export type InvoiceFormValues = z.infer<typeof invoiceFormSchema>;
