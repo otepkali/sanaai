@@ -50,3 +50,29 @@ export function checkVatRegistrationThreshold(turnover: number): VatThresholdRes
     isRegistrationRequired: turnover >= threshold,
   };
 }
+
+export interface VatSettlementInput {
+  /** НДС, уплаченный поставщикам (к зачёту) */
+  inputVat: number;
+  /** НДС, начисленный покупателям с реализации */
+  outputVat: number;
+}
+
+export interface VatSettlementResult {
+  inputVat: number;
+  outputVat: number;
+  /** outputVat − inputVat: положительное — к уплате в бюджет, отрицательное — к возврату/зачёту */
+  netVat: number;
+  isRefund: boolean;
+}
+
+/** Зачёт «исходящего» НДС (с продаж) против «входящего» (с покупок) за период */
+export function calculateVatSettlement({ inputVat, outputVat }: VatSettlementInput): VatSettlementResult {
+  const netVat = outputVat - inputVat;
+  return {
+    inputVat,
+    outputVat,
+    netVat,
+    isRefund: netVat < 0,
+  };
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateVat, checkVatRegistrationThreshold } from "../vat";
+import { calculateVat, calculateVatSettlement, checkVatRegistrationThreshold } from "../vat";
 import { TAX_2026 } from "../tax-config-2026";
 
 describe("calculateVat — начисление сверху (exclusive)", () => {
@@ -50,5 +50,25 @@ describe("checkVatRegistrationThreshold — порог 10 000 МРП", () => {
     const r = checkVatRegistrationThreshold(60_000_000);
     expect(r.isRegistrationRequired).toBe(true);
     expect(r.usageRatio).toBeGreaterThan(1);
+  });
+});
+
+describe("calculateVatSettlement — НДС к возврату/доплате", () => {
+  it("исходящий НДС больше входящего — сумма к уплате в бюджет", () => {
+    const r = calculateVatSettlement({ inputVat: 100_000, outputVat: 160_000 });
+    expect(r.netVat).toBe(60_000);
+    expect(r.isRefund).toBe(false);
+  });
+
+  it("входящий НДС больше исходящего — сумма к возврату", () => {
+    const r = calculateVatSettlement({ inputVat: 200_000, outputVat: 160_000 });
+    expect(r.netVat).toBe(-40_000);
+    expect(r.isRefund).toBe(true);
+  });
+
+  it("равные суммы — ничего не должно ни бюджету, ни плательщику", () => {
+    const r = calculateVatSettlement({ inputVat: 100_000, outputVat: 100_000 });
+    expect(r.netVat).toBe(0);
+    expect(r.isRefund).toBe(false);
   });
 });

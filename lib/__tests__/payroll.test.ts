@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculatePayroll } from "../payroll";
+import { calculateGph, calculatePayroll } from "../payroll";
 import { TAX_2026 } from "../tax-config-2026";
 
 describe("calculatePayroll — эталонные примеры (ТОО на ОУР, вычет 30 МРП применён)", () => {
@@ -127,5 +127,36 @@ describe("calculatePayroll — прочие флаги", () => {
       r.grossSalary + r.so + r.oosms + r.opvr + r.sn,
       5
     );
+  });
+});
+
+describe("calculateGph — договор ГПХ (ИПН 10%, ОПВ 10%, ВОСМС 2%, без СО/СН/ООСМС/ОПВР)", () => {
+  it("вознаграждение 85 000 ₸", () => {
+    const r = calculateGph({ amount: 85000 });
+    expect(r.opv).toBe(8500);
+    expect(r.vosms).toBe(1700);
+    expect(r.ipn).toBe(7480); // 10% × (85000 − 8500 − 1700)
+    expect(r.netIncome).toBe(67320);
+  });
+
+  it("вознаграждение 300 000 ₸ — нет вычета 30 МРП, в отличие от трудового договора", () => {
+    const r = calculateGph({ amount: 300000 });
+    expect(r.opv).toBe(30000);
+    expect(r.vosms).toBe(6000);
+    expect(r.ipnBase).toBe(264000);
+    expect(r.ipn).toBe(26400);
+    expect(r.netIncome).toBe(237600);
+  });
+
+  it("у заказчика нет дополнительных начислений сверх суммы вознаграждения", () => {
+    const r = calculateGph({ amount: 300000 });
+    expect(r.customerCost).toBe(300000);
+  });
+
+  it("ОПВ и ВОСМС ограничены теми же пределами базы, что и по трудовому договору", () => {
+    const hugeAmount = 10_000_000;
+    const r = calculateGph({ amount: hugeAmount });
+    expect(r.opv).toBeCloseTo(TAX_2026.OPV * TAX_2026.OPV_CEILING_MZP * TAX_2026.MZP, 5);
+    expect(r.vosms).toBeCloseTo(TAX_2026.VOSMS * TAX_2026.VOSMS_CEILING_MZP * TAX_2026.MZP, 5);
   });
 });

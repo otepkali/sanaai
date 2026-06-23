@@ -1,16 +1,14 @@
 import Image from "next/image";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { PayrollCalculator } from "@/components/calculators/PayrollCalculator";
-import { SimplifiedCalculator } from "@/components/calculators/SimplifiedCalculator";
-import { VatCalculator } from "@/components/calculators/VatCalculator";
-import { CompareCalculator } from "@/components/calculators/CompareCalculator";
-import { InvoiceForm } from "@/components/InvoiceForm";
+import { UserMenu } from "@/components/UserMenu";
+import { Dashboard } from "@/components/Dashboard";
+import { createClient } from "@/lib/supabase/server";
 
-const TAB_TRIGGER_CLASS =
-  "rounded-md px-3 py-1.5 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm";
+export default async function Home() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  const userEmail = data.user?.email ?? "";
 
-export default function Home() {
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <header className="border-b border-border bg-gradient-to-b from-white to-surface-tint">
@@ -21,7 +19,10 @@ export default function Home() {
               Налоговый калькулятор РК
             </span>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-3">
+            {userEmail ? <UserMenu email={userEmail} /> : null}
+            <ThemeToggle />
+          </div>
         </div>
         <div className="container pb-12 pt-4">
           <h1 className="max-w-2xl text-3xl font-semibold tracking-tight text-text sm:text-4xl">
@@ -34,43 +35,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="container flex-1 py-8">
-        <Tabs defaultValue="payroll">
-          <TabsList className="h-auto flex-wrap gap-1 bg-surface-tint p-1">
-            <TabsTrigger value="payroll" className={TAB_TRIGGER_CLASS}>
-              ФОТ
-            </TabsTrigger>
-            <TabsTrigger value="simplified" className={TAB_TRIGGER_CLASS}>
-              Упрощёнка
-            </TabsTrigger>
-            <TabsTrigger value="vat" className={TAB_TRIGGER_CLASS}>
-              НДС
-            </TabsTrigger>
-            <TabsTrigger value="compare" className={TAB_TRIGGER_CLASS}>
-              Сравнение режимов
-            </TabsTrigger>
-            <TabsTrigger value="invoice" className={TAB_TRIGGER_CLASS}>
-              Счёт на оплату
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="payroll" className="mt-6">
-            <PayrollCalculator />
-          </TabsContent>
-          <TabsContent value="simplified" className="mt-6">
-            <SimplifiedCalculator />
-          </TabsContent>
-          <TabsContent value="vat" className="mt-6">
-            <VatCalculator />
-          </TabsContent>
-          <TabsContent value="compare" className="mt-6">
-            <CompareCalculator />
-          </TabsContent>
-          <TabsContent value="invoice" className="mt-6">
-            <InvoiceForm />
-          </TabsContent>
-        </Tabs>
-      </main>
+      <Dashboard />
 
       <footer className="border-t border-border bg-surface-tint/60">
         <div className="container py-6 text-xs leading-relaxed text-text-muted">

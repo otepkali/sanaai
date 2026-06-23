@@ -1,27 +1,15 @@
-import path from "node:path";
-import { Document, Page, View, Text, Font, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 import { formatDateLong } from "@/lib/format";
+import { PDF_FONT_FAMILY } from "@/lib/pdf-fonts";
 import { calculateInvoiceTotals, formatMoney } from "./calc";
 import type { InvoiceData } from "./types";
-
-const fontsDir = path.join(process.cwd(), "public", "fonts");
-
-// Arimo — open-лицензионный шрифт, метрически и визуально совместимый с Arial
-// (как у 1С/МоегоСклада), но без ограничений на распространение файлов Arial.
-Font.register({
-  family: "Arimo",
-  fonts: [
-    { src: path.join(fontsDir, "Arimo-Regular.ttf"), fontWeight: "normal" },
-    { src: path.join(fontsDir, "Arimo-Bold.ttf"), fontWeight: "bold" },
-  ],
-});
 
 const BORDER = "1pt solid #000000";
 
 const styles = StyleSheet.create({
   page: {
     padding: "16mm 14mm",
-    fontFamily: "Arimo",
+    fontFamily: PDF_FONT_FAMILY,
     fontSize: 9.5,
     color: "#000000",
   },

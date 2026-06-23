@@ -5,14 +5,24 @@ import { ArrowRight, Scale } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MoneyInput } from "@/components/calculators/MoneyInput";
 import { ResultBreakdown, type BreakdownRow } from "@/components/ResultBreakdown";
-import { compareTaxRegimes } from "@/lib/compare";
+import { compareTaxRegimes, type CompareInput } from "@/lib/compare";
 import { compareFormSchema } from "@/lib/schemas";
 import { formatPercent, formatTenge } from "@/lib/format";
+import { useAutosaveCalculation } from "@/lib/hooks/useAutosaveCalculation";
+import type { CalculationRow } from "@/lib/supabase/calculations";
+import { DownloadPdfButton } from "@/components/DownloadPdfButton";
+import type { ReportData } from "@/lib/reports/types";
 
-export function CompareCalculator() {
-  const [annualRevenue, setAnnualRevenue] = useState(20_000_000);
-  const [annualExpenses, setAnnualExpenses] = useState(8_000_000);
-  const [annualPayroll, setAnnualPayroll] = useState(4_000_000);
+export interface CompareCalculatorProps {
+  initialData?: CalculationRow;
+  onSaved?: () => void;
+}
+
+export function CompareCalculator({ initialData, onSaved }: CompareCalculatorProps) {
+  const initialInput = initialData?.input as CompareInput | undefined;
+  const [annualRevenue, setAnnualRevenue] = useState(initialInput?.annualRevenue ?? 20_000_000);
+  const [annualExpenses, setAnnualExpenses] = useState(initialInput?.annualExpenses ?? 8_000_000);
+  const [annualPayroll, setAnnualPayroll] = useState(initialInput?.annualPayroll ?? 4_000_000);
 
   const validation = compareFormSchema.safeParse({
     annualRevenue,
@@ -23,6 +33,13 @@ export function CompareCalculator() {
   const result = useMemo(
     () => compareTaxRegimes({ annualRevenue, annualExpenses, annualPayroll }),
     [annualRevenue, annualExpenses, annualPayroll]
+  );
+
+  useAutosaveCalculation(
+    "comparison",
+    { annualRevenue, annualExpenses, annualPayroll },
+    result,
+    { initialId: initialData?.id, onSaved }
   );
 
   const simplifiedRows: BreakdownRow[] = [
@@ -43,6 +60,22 @@ export function CompareCalculator() {
       : result.cheaperRegime === "general"
         ? "ОУР (общий режим) выгоднее"
         : "Режимы дают одинаковую нагрузку";
+
+  const reportData: ReportData = {
+    type: "comparison",
+    title: "Сравнение режимов",
+    date: new Date().toISOString().slice(0, 10),
+    inputs: [
+      { label: "Годовой оборот", value: formatTenge(annualRevenue) },
+      { label: "Примерные расходы (без ФОТ)", value: formatTenge(annualExpenses) },
+      { label: "ФОТ за год", value: formatTenge(annualPayroll) },
+    ],
+    rows: [
+      { label: "Налог по упрощёнке (910)", value: formatTenge(result.simplifiedTax) },
+      { label: "Налоговая нагрузка по ОУР", value: formatTenge(result.generalTax) },
+      { label: "Вывод для клиента", value: verdictLabel, bold: true },
+    ],
+  };
 
   return (
     <div className="space-y-6">
@@ -121,6 +154,8 @@ export function CompareCalculator() {
           rows={generalRows}
         />
       </div>
+
+      <DownloadPdfButton data={reportData} />
     </div>
   );
 }

@@ -145,3 +145,44 @@ export function calculatePayroll(input: PayrollInput): PayrollResult {
     isProgressiveIpn,
   };
 }
+
+export interface GphInput {
+  /** Сумма вознаграждения по договору ГПХ, тенге */
+  amount: number;
+}
+
+export interface GphResult {
+  amount: number;
+  opv: number;
+  vosms: number;
+  ipnBase: number;
+  ipn: number;
+  /** Сумма «на руки» исполнителю */
+  netIncome: number;
+  /** Стоимость для заказчика — по ГПХ нет работодательских начислений (СО/СН/ООСМС/ОПВР) */
+  customerCost: number;
+}
+
+/**
+ * Договор ГПХ (гражданско-правового характера): ИПН 10%, ОПВ 10%, ВОСМС 2% —
+ * в отличие от трудового договора, СО, СН, ООСМС и ОПВР по нему не начисляются.
+ */
+export function calculateGph(input: GphInput): GphResult {
+  const { amount } = input;
+
+  const opv = TAX_2026.OPV * Math.min(amount, TAX_2026.OPV_CEILING_MZP * TAX_2026.MZP);
+  const vosms = TAX_2026.VOSMS * Math.min(amount, TAX_2026.VOSMS_CEILING_MZP * TAX_2026.MZP);
+  const ipnBase = Math.max(0, amount - opv - vosms);
+  const ipn = TAX_2026.IPN * ipnBase;
+  const netIncome = amount - opv - vosms - ipn;
+
+  return {
+    amount,
+    opv,
+    vosms,
+    ipnBase,
+    ipn,
+    netIncome,
+    customerCost: amount,
+  };
+}
