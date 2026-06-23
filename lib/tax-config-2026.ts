@@ -68,7 +68,7 @@ export const SIMPLIFIED_REGIONS = [
   { id: "default", label: "Базовая ставка (без льгот маслихата)", rate: 0.04 },
   { id: "almaty", label: "г. Алматы", rate: 0.04 },
   { id: "astana", label: "г. Астана", rate: 0.04 },
-  { id: "shymkent", label: "г. Шымкент", rate: 0.03 },
+  { id: "shymkent", label: "г. Шымкент", rate: 0.02 },
   { id: "turkistan", label: "Туркестанская область", rate: 0.02 },
   { id: "mangystau", label: "Мангистауская область", rate: 0.03 },
   { id: "abay", label: "Абайская область", rate: 0.02 },
