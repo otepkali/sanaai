@@ -44,6 +44,7 @@ const invoiceDataSchema = z.object({
   contract: z.string(),
   items: z.array(invoiceItemSchema).min(1, "Добавьте хотя бы одну позицию"),
   isVatPayer: z.boolean(),
+  vatMode: z.enum(["inclusive", "exclusive"]),
   showTaxBlock: z.boolean(),
   taxableIncome: z.number().min(0).optional(),
 });

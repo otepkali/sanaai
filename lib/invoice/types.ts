@@ -22,6 +22,10 @@ export interface InvoiceBeneficiary {
   knp: string;
 }
 
+/** "inclusive" — цены в позициях уже включают НДС (он выделяется из суммы);
+ *  "exclusive" — цены без НДС, он начисляется сверху */
+export type VatMode = "inclusive" | "exclusive";
+
 export interface InvoiceData {
   number: string; // № счёта
   date: string; // дата (ISO), форматируется как «22 июня 2026 г.»
@@ -30,7 +34,9 @@ export interface InvoiceData {
   buyer: InvoiceParty;
   contract: string; // напр. «Без договора»
   items: InvoiceItem[];
-  isVatPayer: boolean; // плательщик НДС? влияет на строку «В том числе НДС»
+  isVatPayer: boolean; // плательщик НДС?
+  /** Как трактовать цены в позициях — учитывается только если isVatPayer === true */
+  vatMode: VatMode;
   showTaxBlock: boolean; // показывать ли налоговый блок
   /** Налогооблагаемый доход (сумма без НДС − расходы) для налогового блока, тенге */
   taxableIncome?: number;

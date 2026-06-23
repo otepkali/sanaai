@@ -260,18 +260,24 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
         <View style={styles.totalsBlock}>
           <View style={styles.totalsRow}>
             <Text>Итого:</Text>
-            <Text>{formatMoney(result.total)}</Text>
+            <Text>{formatMoney(result.subtotal)}</Text>
           </View>
           {result.vatAmount !== null ? (
             <View style={styles.totalsRow}>
-              <Text>В том числе НДС:</Text>
+              <Text>{result.vatMode === "exclusive" ? "Кроме того НДС:" : "В том числе НДС:"}</Text>
               <Text>{formatMoney(result.vatAmount)}</Text>
+            </View>
+          ) : null}
+          {result.vatMode === "exclusive" && result.vatAmount !== null ? (
+            <View style={styles.totalsRow}>
+              <Text>Всего с НДС:</Text>
+              <Text>{formatMoney(result.grossAmount)}</Text>
             </View>
           ) : null}
         </View>
 
         <Text style={styles.summaryLine}>
-          Всего наименований {result.itemsCount}, на сумму {formatMoney(result.total)} KZT
+          Всего наименований {result.itemsCount}, на сумму {formatMoney(result.grossAmount)} KZT
         </Text>
         <Text style={styles.amountInWords}>Всего к оплате: {result.amountInWords}</Text>
 

@@ -1,6 +1,6 @@
 import { numberToWordsRu } from "@/lib/number-to-words";
 import { formatDecimal } from "@/lib/format";
-import type { InvoiceData, InvoiceItem } from "./types";
+import type { InvoiceData, InvoiceItem, VatMode } from "./types";
 
 const VAT_RATE = 0.16;
 const IPN_RATE = 0.1;
@@ -32,10 +32,16 @@ export interface InvoiceLineResult extends InvoiceItem {
 
 export interface InvoiceCalcResult {
   lines: InvoiceLineResult[];
-  /** Итого по всем строкам */
-  total: number;
-  /** НДС «в том числе» (16/116 от Итого) — null, если не плательщик НДС */
+  /** Сумма строк как введено (qty × price) — то, что показывается в строке «Итого:» */
+  subtotal: number;
+  /** Сумма без НДС */
+  netAmount: number;
+  /** НДС — null, если не плательщик НДС */
   vatAmount: number | null;
+  /** Итого к оплате с учётом НДС — основа для суммы прописью и имени файла */
+  grossAmount: number;
+  /** Режим трактовки НДС — определяет подпись («В том числе» / «Кроме того») */
+  vatMode: VatMode;
   itemsCount: number;
   amountInWords: string;
   taxableIncome: number;
@@ -49,18 +55,40 @@ export function calculateInvoiceTotals(data: InvoiceData): InvoiceCalcResult {
     ...item,
     lineTotal: item.qty * item.price,
   }));
-  const total = lines.reduce((sum, line) => sum + line.lineTotal, 0);
+  const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
 
-  const vatAmount = data.isVatPayer ? (total * 16) / 116 : null;
+  let netAmount: number;
+  let vatAmount: number | null;
+  let grossAmount: number;
+
+  if (!data.isVatPayer) {
+    netAmount = subtotal;
+    vatAmount = null;
+    grossAmount = subtotal;
+  } else if (data.vatMode === "exclusive") {
+    // Цены без НДС — налог начисляется сверх суммы строк
+    netAmount = subtotal;
+    vatAmount = subtotal * VAT_RATE;
+    grossAmount = subtotal + vatAmount;
+  } else {
+    // Цены уже включают НДС — он выделяется из суммы строк (16/116)
+    grossAmount = subtotal;
+    vatAmount = (subtotal * VAT_RATE) / (1 + VAT_RATE);
+    netAmount = subtotal - vatAmount;
+  }
+
   const taxableIncome = data.taxableIncome ?? 0;
   const ipnAmount = data.showTaxBlock ? IPN_RATE * taxableIncome : null;
 
   return {
     lines,
-    total,
+    subtotal,
+    netAmount,
     vatAmount,
+    grossAmount,
+    vatMode: data.vatMode,
     itemsCount: data.items.length,
-    amountInWords: numberToWordsKZT(total),
+    amountInWords: numberToWordsKZT(grossAmount),
     taxableIncome,
     ipnAmount,
   };

@@ -1,8 +1,15 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, useSyncExternalStore } from "react";
 import { Download, Loader2, Plus, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -18,7 +25,7 @@ import {
 } from "@/components/ui/table";
 import { MoneyInput } from "@/components/calculators/MoneyInput";
 import { calculateInvoiceTotals, formatMoney } from "@/lib/invoice/calc";
-import type { InvoiceData, InvoiceItem } from "@/lib/invoice/types";
+import type { InvoiceData, InvoiceItem, VatMode } from "@/lib/invoice/types";
 import { formatTenge } from "@/lib/format";
 
 interface EditableItem extends InvoiceItem {
@@ -35,13 +42,37 @@ const createItem = (): EditableItem => ({
   price: 0,
 });
 
+const LAST_INVOICE_NUMBER_KEY = "sana-invoice-last-number";
+
+/** Если последний номер счёта был чисто числовым — предлагаем следующий по порядку */
+function nextInvoiceNumber(lastNumber: string): string {
+  return /^\d+$/.test(lastNumber) ? String(Number(lastNumber) + 1) : lastNumber;
+}
+
+const noopSubscribe = () => () => {};
+
+function readSuggestedInvoiceNumber(): string {
+  const lastNumber = localStorage.getItem(LAST_INVOICE_NUMBER_KEY);
+  return lastNumber ? nextInvoiceNumber(lastNumber) : "1";
+}
+
+/** Подставляет следующий по порядку номер счёта (как в обычной бухгалтерской
+ *  программе), без рассинхронизации с серверным рендером — см. theme-toggle.tsx. */
+function useSuggestedInvoiceNumber(): string {
+  return useSyncExternalStore(noopSubscribe, readSuggestedInvoiceNumber, () => "1");
+}
+
 export function InvoiceForm() {
   const [items, setItems] = useState<EditableItem[]>(() => [createItem()]);
   const [isVatPayer, setIsVatPayer] = useState(true);
+  const [vatMode, setVatMode] = useState<VatMode>("inclusive");
   const [showTaxBlock, setShowTaxBlock] = useState(false);
   const [taxableIncome, setTaxableIncome] = useState(0);
 
-  const [number, setNumber] = useState("1");
+  const suggestedNumber = useSuggestedInvoiceNumber();
+  const [numberOverride, setNumberOverride] = useState<string | null>(null);
+  const number = numberOverride ?? suggestedNumber;
+
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [contract, setContract] = useState("Без договора");
 
@@ -111,6 +142,7 @@ export function InvoiceForm() {
       contract,
       items: items.map(({ code, name, qty, unit, price }) => ({ code, name, qty, unit, price })),
       isVatPayer,
+      vatMode,
       showTaxBlock,
       taxableIncome,
     };
@@ -142,6 +174,9 @@ export function InvoiceForm() {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
+
+      localStorage.setItem(LAST_INVOICE_NUMBER_KEY, number);
+      setNumberOverride(nextInvoiceNumber(number));
     } catch {
       setDownloadError("Не удалось связаться с сервером. Попробуйте ещё раз.");
     } finally {
@@ -163,10 +198,25 @@ export function InvoiceForm() {
                 <Label htmlFor="is-vat-payer" className="text-sm">
                   Плательщик НДС
                 </Label>
-                <p className="text-xs text-text-muted">«В том числе НДС» = Итого × 16/116</p>
+                <p className="text-xs text-text-muted">Ставка 16%</p>
               </div>
               <Switch id="is-vat-payer" checked={isVatPayer} onCheckedChange={setIsVatPayer} />
             </div>
+
+            {isVatPayer ? (
+              <div className="space-y-1.5">
+                <Label className="text-sm text-text-muted">Цены в позициях указаны</Label>
+                <Select value={vatMode} onValueChange={(v) => setVatMode(v as VatMode)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="exclusive">Без НДС — начислить сверху</SelectItem>
+                    <SelectItem value="inclusive">С НДС — выделить «в т.ч.»</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
 
             <div className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
               <div>
@@ -192,7 +242,7 @@ export function InvoiceForm() {
                 <Label htmlFor={numberId} className="text-sm text-text-muted">
                   № счёта
                 </Label>
-                <Input id={numberId} value={number} onChange={(e) => setNumber(e.target.value)} />
+                <Input id={numberId} value={number} onChange={(e) => setNumberOverride(e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor={dateId} className="text-sm text-text-muted">
@@ -426,11 +476,11 @@ export function InvoiceForm() {
             <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
               <div className="flex justify-between text-text-muted">
                 <span>Итого</span>
-                <span className="font-tabular">{formatTenge(preview.total)}</span>
+                <span className="font-tabular">{formatTenge(preview.subtotal)}</span>
               </div>
               {preview.vatAmount !== null ? (
                 <div className="flex justify-between text-text-muted">
-                  <span>В том числе НДС</span>
+                  <span>{vatMode === "exclusive" ? "Кроме того НДС" : "В том числе НДС"}</span>
                   <span className="font-tabular">{formatTenge(preview.vatAmount)}</span>
                 </div>
               ) : null}
@@ -442,7 +492,7 @@ export function InvoiceForm() {
               ) : null}
               <div className="flex justify-between rounded-lg bg-primary-bg px-3 py-3 text-base font-semibold text-primary">
                 <span>Всего к оплате</span>
-                <span className="font-tabular">{formatTenge(preview.total)}</span>
+                <span className="font-tabular">{formatTenge(preview.grossAmount)}</span>
               </div>
               <p className="text-xs italic text-text-muted">{preview.amountInWords}</p>
             </div>

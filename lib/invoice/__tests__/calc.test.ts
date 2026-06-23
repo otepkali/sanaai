@@ -20,6 +20,7 @@ function buildInvoice(overrides: Partial<InvoiceData> = {}): InvoiceData {
     contract: "Без договора",
     items: [],
     isVatPayer: true,
+    vatMode: "inclusive",
     showTaxBlock: false,
     ...overrides,
   };
@@ -53,8 +54,8 @@ describe("calculateInvoiceTotals — Итого по образцу", () => {
       ],
     });
     const result = calculateInvoiceTotals(data);
-    expect(result.total).toBe(333_920);
-    expect(formatMoney(result.total)).toBe("333 920,00");
+    expect(result.subtotal).toBe(333_920);
+    expect(formatMoney(result.subtotal)).toBe("333 920,00");
     expect(result.itemsCount).toBe(3);
   });
 
@@ -85,6 +86,50 @@ describe("calculateInvoiceTotals — НДС «в том числе» 16/116", ()
     });
     const result = calculateInvoiceTotals(data);
     expect(result.vatAmount).toBeNull();
+    expect(result.grossAmount).toBe(333_920);
+  });
+});
+
+describe("calculateInvoiceTotals — НДС «сверху» (exclusive)", () => {
+  it("цены без НДС — налог начисляется сверх суммы строк", () => {
+    const data = buildInvoice({
+      items: [{ code: "1", name: "Товар", qty: 1, unit: "шт", price: 1_000 }],
+      isVatPayer: true,
+      vatMode: "exclusive",
+    });
+    const result = calculateInvoiceTotals(data);
+    expect(result.subtotal).toBe(1_000);
+    expect(result.netAmount).toBe(1_000);
+    expect(result.vatAmount).toBeCloseTo(160, 5);
+    expect(result.grossAmount).toBeCloseTo(1_160, 5);
+  });
+
+  it("сумма прописью считается от итого с НДС (grossAmount), а не от Итого по строкам", () => {
+    const data = buildInvoice({
+      items: [{ code: "1", name: "Товар", qty: 1, unit: "шт", price: 1_000 }],
+      isVatPayer: true,
+      vatMode: "exclusive",
+    });
+    const result = calculateInvoiceTotals(data);
+    expect(result.amountInWords).toBe("Одна тысяча сто шестьдесят тенге 00 тиын");
+  });
+
+  it("exclusive и inclusive дают одинаковый итог к оплате на разных вводных", () => {
+    const exclusive = calculateInvoiceTotals(
+      buildInvoice({
+        items: [{ code: "1", name: "Товар", qty: 1, unit: "шт", price: 1_000 }],
+        vatMode: "exclusive",
+      })
+    );
+    const inclusive = calculateInvoiceTotals(
+      buildInvoice({
+        items: [{ code: "1", name: "Товар", qty: 1, unit: "шт", price: exclusive.grossAmount }],
+        vatMode: "inclusive",
+      })
+    );
+    expect(inclusive.grossAmount).toBeCloseTo(exclusive.grossAmount, 5);
+    expect(inclusive.netAmount).toBeCloseTo(exclusive.netAmount, 5);
+    expect(inclusive.vatAmount).toBeCloseTo(exclusive.vatAmount as number, 5);
   });
 });
 
