@@ -6,11 +6,13 @@ import type { InvoiceData } from "./types";
 
 const fontsDir = path.join(process.cwd(), "public", "fonts");
 
+// Arimo — open-лицензионный шрифт, метрически и визуально совместимый с Arial
+// (как у 1С/МоегоСклада), но без ограничений на распространение файлов Arial.
 Font.register({
-  family: "PTSans",
+  family: "Arimo",
   fonts: [
-    { src: path.join(fontsDir, "PTSans-Regular.ttf"), fontWeight: "normal" },
-    { src: path.join(fontsDir, "PTSans-Bold.ttf"), fontWeight: "bold" },
+    { src: path.join(fontsDir, "Arimo-Regular.ttf"), fontWeight: "normal" },
+    { src: path.join(fontsDir, "Arimo-Bold.ttf"), fontWeight: "bold" },
   ],
 });
 
@@ -19,7 +21,7 @@ const BORDER = "1pt solid #000000";
 const styles = StyleSheet.create({
   page: {
     padding: "16mm 14mm",
-    fontFamily: "PTSans",
+    fontFamily: "Arimo",
     fontSize: 9.5,
     color: "#000000",
   },
@@ -59,6 +61,9 @@ const styles = StyleSheet.create({
   cellCaption: {
     fontWeight: "bold",
     marginBottom: 2,
+  },
+  cellValueBold: {
+    fontWeight: "bold",
   },
   title: {
     fontSize: 14,
@@ -189,16 +194,16 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
           <View style={styles.paymentRow}>
             <View style={styles.paymentCellWide}>
               <Text style={styles.cellCaption}>Бенефициар:</Text>
-              <Text>{beneficiary.name || "—"}</Text>
+              <Text style={styles.cellValueBold}>{beneficiary.name || "—"}</Text>
               <Text>ИИН: {beneficiary.iin || "—"}</Text>
             </View>
             <View style={styles.paymentCellNarrow}>
               <Text style={styles.cellCaption}>ИИК</Text>
-              <Text>{beneficiary.iik || "—"}</Text>
+              <Text style={styles.cellValueBold}>{beneficiary.iik || "—"}</Text>
             </View>
             <View style={[styles.paymentCellNarrow, { borderRight: BORDER }]}>
               <Text style={styles.cellCaption}>Кбе</Text>
-              <Text>{beneficiary.kbe || "—"}</Text>
+              <Text style={styles.cellValueBold}>{beneficiary.kbe || "—"}</Text>
             </View>
           </View>
           <View style={styles.paymentRow}>
@@ -208,11 +213,11 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
             </View>
             <View style={styles.paymentCellNarrow}>
               <Text style={styles.cellCaption}>БИК</Text>
-              <Text>{beneficiary.bik || "—"}</Text>
+              <Text style={styles.cellValueBold}>{beneficiary.bik || "—"}</Text>
             </View>
             <View style={[styles.paymentCellNarrow, { borderRight: BORDER }]}>
               <Text style={styles.cellCaption}>Код назначения платежа</Text>
-              <Text>{beneficiary.knp || "—"}</Text>
+              <Text style={styles.cellValueBold}>{beneficiary.knp || "—"}</Text>
             </View>
           </View>
         </View>
