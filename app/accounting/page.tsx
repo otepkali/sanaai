@@ -1,9 +1,9 @@
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
-import { Dashboard } from "@/components/Dashboard";
+import { AccountingClient } from "@/components/accounting/AccountingClient";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function Home() {
+export default async function AccountingPage() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   const userEmail = data.user?.email ?? "";
@@ -12,15 +12,17 @@ export default async function Home() {
     <div className="flex min-h-full flex-1 flex-col">
       <AppHeader userEmail={userEmail}>
         <h1 className="max-w-2xl text-3xl font-semibold tracking-tight text-text sm:text-4xl">
-          Налоги Казахстана 2026 — быстро, точно, с разбивкой каждой суммы
+          Учёт и ведомости — автоматическая категоризация транзакций
         </h1>
         <p className="mt-3 max-w-xl text-text-muted">
-          ФОТ, упрощённая декларация (910), НДС и сравнение режимов — в одном инструменте
-          для бухгалтеров и владельцев ИП.
+          Загрузите банковскую выписку или выгрузку из 1С — ИИ распределит операции по статьям
+          движения денежных средств и плану счетов РК.
         </p>
       </AppHeader>
 
-      <Dashboard />
+      <main className="container flex-1 py-8">
+        <AccountingClient />
+      </main>
 
       <AppFooter />
     </div>
