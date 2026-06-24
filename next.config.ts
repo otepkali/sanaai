@@ -6,7 +6,19 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/invoice": ["./public/fonts/**/*"],
     "/api/report": ["./public/fonts/**/*", "./public/logo.png"],
+    // pdfjs-dist подгружает pdf.worker.mjs и шрифты/cmaps по путям относительно
+    // собственного node_modules — автотрассировка Vercel может их не найти.
+    "/api/accounting/analyze": [
+      "./node_modules/pdfjs-dist/legacy/build/**/*",
+      "./node_modules/pdfjs-dist/cmaps/**/*",
+      "./node_modules/pdfjs-dist/standard_fonts/**/*",
+    ],
   },
+  // pdfjs-dist динамически импортирует свой pdf.worker.mjs по пути относительно
+  // собственного node_modules — при бандлинге через Turbopack/Webpack этот путь
+  // ломается ("Setting up fake worker failed"). serverExternalPackages заставляет
+  // Next.js резолвить пакет через нативный require Node вместо бандлинга.
+  serverExternalPackages: ["pdf-parse", "pdfjs-dist"],
 };
 
 export default nextConfig;

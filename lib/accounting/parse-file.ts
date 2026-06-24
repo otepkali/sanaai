@@ -51,6 +51,7 @@ export async function parseUploadedFile(buffer: Buffer, extension: string): Prom
     }
   } catch (error) {
     if (error instanceof FileParseError) throw error;
+    console.error("Ошибка чтения файла", extension, error);
     throw new FileParseError("Не удалось прочитать содержимое файла. Проверьте, что файл не повреждён.");
   }
 
