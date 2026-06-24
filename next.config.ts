@@ -8,10 +8,17 @@ const nextConfig: NextConfig = {
     "/api/report": ["./public/fonts/**/*", "./public/logo.png"],
     // pdfjs-dist подгружает pdf.worker.mjs и шрифты/cmaps по путям относительно
     // собственного node_modules — автотрассировка Vercel может их не найти.
+    // @napi-rs/canvas подгружается pdfjs-dist через require() внутри try/catch —
+    // автотрассировка Vercel такие условные require не видит и не копирует пакет
+    // (включая нативный бинарник конкретной платформы) в собранную функцию.
     "/api/accounting/analyze": [
       "./node_modules/pdfjs-dist/legacy/build/**/*",
       "./node_modules/pdfjs-dist/cmaps/**/*",
       "./node_modules/pdfjs-dist/standard_fonts/**/*",
+      "./node_modules/@napi-rs/canvas/**/*",
+      "./node_modules/@napi-rs/canvas-linux-x64-gnu/**/*",
+      "./node_modules/@napi-rs/canvas-linux-x64-musl/**/*",
+      "./node_modules/@napi-rs/canvas-linux-arm64-gnu/**/*",
     ],
   },
   // pdfjs-dist динамически импортирует свой pdf.worker.mjs по пути относительно
