@@ -18,7 +18,9 @@ const nextConfig: NextConfig = {
   // собственного node_modules — при бандлинге через Turbopack/Webpack этот путь
   // ломается ("Setting up fake worker failed"). serverExternalPackages заставляет
   // Next.js резолвить пакет через нативный require Node вместо бандлинга.
-  serverExternalPackages: ["pdf-parse", "pdfjs-dist"],
+  // @napi-rs/canvas — нативный N-API бинарник, который pdfjs-dist подхватывает
+  // сам для полифилла DOMMatrix (без него в Node бросает ReferenceError).
+  serverExternalPackages: ["pdf-parse", "pdfjs-dist", "@napi-rs/canvas"],
 };
 
 export default nextConfig;
