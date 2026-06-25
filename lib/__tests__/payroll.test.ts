@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateGph, calculatePayroll, prorateSalaryWithOvertime } from "../payroll";
+import { calculateGph, calculatePayroll, prorateSalaryWithOvertime, solveGrossFromNet } from "../payroll";
 import { TAX_2026 } from "../tax-config-2026";
 
 describe("calculatePayroll — эталонные примеры (ТОО на ОУР, вычет 30 МРП применён)", () => {
@@ -242,5 +242,42 @@ describe("prorateSalaryWithOvertime", () => {
       hoursWorked: 0,
     });
     expect(r.accrued).toBe(220000);
+  });
+});
+
+describe("solveGrossFromNet — обратный расчёт оклада из суммы «на руки»", () => {
+  it("0 на руки — оклад 0", () => {
+    expect(solveGrossFromNet(0)).toBe(0);
+  });
+
+  it("обращает эталонный пример: оклад 300 000 → на руки 250 575", () => {
+    const gross = solveGrossFromNet(250575);
+    expect(gross).toBe(300000);
+  });
+
+  it("обращает эталонный пример: оклад 200 000 → на руки 171 375", () => {
+    const gross = solveGrossFromNet(171375);
+    expect(gross).toBe(200000);
+  });
+
+  it("результат согласован с прямым расчётом для произвольной суммы", () => {
+    const targetNet = 543210;
+    const gross = solveGrossFromNet(targetNet);
+    const r = calculatePayroll({ grossSalary: gross });
+    expect(r.netIncome).toBeCloseTo(targetNet, 0);
+  });
+
+  it("работает с льготной категорией и режимом ИП", () => {
+    const targetNet = 400000;
+    const gross = solveGrossFromNet(targetNet, { mode: "ip", benefitCategory: "pensioner" });
+    const r = calculatePayroll({ grossSalary: gross, mode: "ip", benefitCategory: "pensioner" });
+    expect(r.netIncome).toBeCloseTo(targetNet, 0);
+  });
+
+  it("работает на больших суммах, пересекающих потолки ОПВ/ВОСМС и порог прогрессивной ставки", () => {
+    const targetNet = 5_000_000;
+    const gross = solveGrossFromNet(targetNet);
+    const r = calculatePayroll({ grossSalary: gross });
+    expect(r.netIncome).toBeCloseTo(targetNet, 0);
   });
 });

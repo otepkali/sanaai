@@ -151,6 +151,39 @@ export function calculatePayroll(input: PayrollInput): PayrollResult {
   };
 }
 
+export type SolveGrossFromNetOptions = Omit<PayrollInput, "grossSalary">;
+
+/**
+ * Обратный расчёт: подбирает оклад («грязными»), при котором «на руки»
+ * получится targetNet. calculatePayroll монотонна по окладу (чистый доход
+ * растёт с окладом даже с учётом потолков ОПВ/ВОСМС и прогрессивной ставки
+ * ИПН), поэтому решаем бинарным поиском, а не точной формулой.
+ */
+export function solveGrossFromNet(targetNet: number, options: SolveGrossFromNetOptions = {}): number {
+  if (targetNet <= 0) return 0;
+
+  let low = 0;
+  let high = Math.max(targetNet * 1.6, 100_000);
+  while (
+    calculatePayroll({ grossSalary: high, ...options }).netIncome < targetNet &&
+    high < 1_000_000_000
+  ) {
+    high *= 2;
+  }
+
+  for (let i = 0; i < 50; i++) {
+    const mid = (low + high) / 2;
+    const net = calculatePayroll({ grossSalary: mid, ...options }).netIncome;
+    if (net < targetNet) {
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+
+  return Math.round(high);
+}
+
 export const HOURS_PER_DAY_NORM = 8;
 export const OVERTIME_RATE_MULTIPLIER = 1.5;
 

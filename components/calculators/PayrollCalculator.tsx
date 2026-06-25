@@ -25,7 +25,13 @@ import {
 } from "@/components/ui/table";
 import { MoneyInput } from "@/components/calculators/MoneyInput";
 import { ResultBreakdown, type BreakdownRow } from "@/components/ResultBreakdown";
-import { calculateGph, calculatePayroll, prorateSalaryWithOvertime, type PayrollMode } from "@/lib/payroll";
+import {
+  calculateGph,
+  calculatePayroll,
+  prorateSalaryWithOvertime,
+  solveGrossFromNet,
+  type PayrollMode,
+} from "@/lib/payroll";
 import { payrollFormSchema } from "@/lib/schemas";
 import { formatPercent, formatTenge } from "@/lib/format";
 import { PAYROLL_BENEFIT_CATEGORIES, type BenefitCategory } from "@/lib/tax-config-2026";
@@ -43,6 +49,8 @@ import type { ReportData } from "@/lib/reports/types";
 type PayrollSubMode = "single" | "multiple" | "gph";
 
 const CURRENT_MONTH = new Date().getMonth() + 1;
+const TAB_TRIGGER_CLASS =
+  "rounded-md px-3 py-1.5 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm";
 
 interface EditableEmployee {
   id: number;
@@ -65,9 +73,12 @@ const createEmployee = (norm: { days: number; hours: number }): EditableEmployee
   benefitCategory: "none",
 });
 
+type SalaryInputMode = "gross" | "net";
+
 interface SingleInput {
   subMode: "single";
   grossSalary: number;
+  salaryInputMode: SalaryInputMode;
   mode: PayrollMode;
   applyStandardDeduction: boolean;
   benefitCategory: BenefitCategory;
@@ -81,6 +92,7 @@ interface MultipleInput {
   bornBeforeJan1975: boolean;
   selectedMonth: number;
   schedule: WorkSchedule;
+  salaryInputMode: SalaryInputMode;
   employees: Array<{
     name: string;
     position: string;
@@ -112,6 +124,9 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
   const [grossSalary, setGrossSalary] = useState(
     initialInput?.subMode === "single" ? initialInput.grossSalary : 300000
   );
+  const [salaryInputMode, setSalaryInputMode] = useState<SalaryInputMode>(
+    initialInput?.subMode === "single" ? initialInput.salaryInputMode : "gross"
+  );
   const [benefitCategory, setBenefitCategory] = useState<BenefitCategory>(
     initialInput?.subMode === "single" ? initialInput.benefitCategory : "none"
   );
@@ -140,6 +155,9 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
   const [schedule, setSchedule] = useState<WorkSchedule>(
     initialInput?.subMode === "multiple" ? initialInput.schedule : "five_day"
   );
+  const [multiSalaryInputMode, setMultiSalaryInputMode] = useState<SalaryInputMode>(
+    initialInput?.subMode === "multiple" ? initialInput.salaryInputMode : "gross"
+  );
   const workingNorm = getWorkingNorm(selectedMonth, schedule);
   const [employees, setEmployees] = useState<EditableEmployee[]>(() =>
     initialInput?.subMode === "multiple" && initialInput.employees.length > 0
@@ -162,8 +180,13 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
     bornBeforeJan1975,
   });
 
+  const effectiveGrossSalary =
+    salaryInputMode === "net"
+      ? solveGrossFromNet(grossSalary, { mode, applyStandardDeduction, benefitCategory, bornBeforeJan1975 })
+      : grossSalary;
+
   const result = calculatePayroll({
-    grossSalary,
+    grossSalary: effectiveGrossSalary,
     mode,
     applyStandardDeduction,
     benefitCategory,
@@ -171,8 +194,17 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
   });
 
   const employeeResults = employees.map((employee) => {
+    const employeeEffectiveGross =
+      multiSalaryInputMode === "net"
+        ? solveGrossFromNet(employee.grossSalary, {
+            mode,
+            applyStandardDeduction,
+            benefitCategory: employee.benefitCategory,
+            bornBeforeJan1975,
+          })
+        : employee.grossSalary;
     const overtime = prorateSalaryWithOvertime({
-      grossSalary: employee.grossSalary,
+      grossSalary: employeeEffectiveGross,
       normDays: workingNorm.days,
       normHours: workingNorm.hours,
       daysWorked: employee.daysWorked,
@@ -192,6 +224,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
     const totalEmployerGross = result.so + result.oosms + result.opvr + result.snGross;
     return {
       employee,
+      employeeEffectiveGross,
       proratedSalary: overtime.accrued,
       overtimeDaysPay: overtime.overtimeDaysPay,
       overtimeHoursPay: overtime.overtimeHoursPay,
@@ -264,7 +297,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
 
   const savedInput: PayrollSavedInput =
     subMode === "single"
-      ? { subMode, grossSalary, mode, applyStandardDeduction, benefitCategory, bornBeforeJan1975 }
+      ? { subMode, grossSalary, salaryInputMode, mode, applyStandardDeduction, benefitCategory, bornBeforeJan1975 }
       : subMode === "multiple"
         ? {
             subMode,
@@ -273,6 +306,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
             bornBeforeJan1975,
             selectedMonth,
             schedule,
+            salaryInputMode: multiSalaryInputMode,
             employees: employees.map(
               ({ name, position, grossSalary: gs, daysWorked, hoursWorked, benefitCategory: bc }) => ({
                 name,
@@ -336,6 +370,10 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                 label: "Норма (40-час. неделя)",
                 value: `${workingNorm.days} дн. / ${workingNorm.hours} ч.`,
               },
+              {
+                label: "Тип ввода суммы",
+                value: multiSalaryInputMode === "net" ? "На руки (чистыми)" : "Оклад (грязными)",
+              },
               { label: "Число сотрудников", value: String(employees.length) },
             ],
             rows: [],
@@ -343,7 +381,11 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
               columns: [
                 { label: "Сотрудник", flex: 2.2 },
                 { label: "Должность", flex: 1.8 },
-                { label: "Оклад (тариф)", flex: 1.3, align: "right" },
+                {
+                  label: multiSalaryInputMode === "net" ? "Оклад (расч.)" : "Оклад (тариф)",
+                  flex: 1.3,
+                  align: "right",
+                },
                 { label: "Дн.", flex: 0.6, align: "right" },
                 { label: "Ч.", flex: 0.6, align: "right" },
                 { label: "Льгота", flex: 1.4 },
@@ -368,6 +410,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                 ...employeeResults.map(
                   ({
                     employee,
+                    employeeEffectiveGross,
                     proratedSalary,
                     overtimeDaysPay,
                     overtimeHoursPay,
@@ -378,7 +421,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                   }) => [
                     employee.name || "Сотрудник",
                     employee.position || "—",
-                    formatTenge(employee.grossSalary),
+                    formatTenge(employeeEffectiveGross),
                     String(employee.daysWorked),
                     String(employee.hoursWorked),
                     PAYROLL_BENEFIT_CATEGORIES.find((c) => c.id === employee.benefitCategory)?.label ?? "—",
@@ -563,11 +606,27 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
               <CardDescription>Форма 200 — расчёт по одному работнику</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
+              <Tabs value={salaryInputMode} onValueChange={(v) => setSalaryInputMode(v as SalaryInputMode)}>
+                <TabsList className="w-full bg-surface-tint p-1">
+                  <TabsTrigger value="gross" className={`flex-1 ${TAB_TRIGGER_CLASS}`}>
+                    Оклад (грязными)
+                  </TabsTrigger>
+                  <TabsTrigger value="net" className={`flex-1 ${TAB_TRIGGER_CLASS}`}>
+                    На руки (чистыми)
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
               <MoneyInput
-                label="Начисленный оклад (грязными)"
+                label={salaryInputMode === "net" ? "Сумма на руки (чистыми)" : "Начисленный оклад (грязными)"}
                 value={grossSalary}
                 onChange={setGrossSalary}
                 error={!validation.success ? validation.error.issues[0]?.message : undefined}
+                hint={
+                  salaryInputMode === "net"
+                    ? `Расчётный оклад (грязными): ${formatTenge(effectiveGrossSalary)}`
+                    : undefined
+                }
               />
 
               {sharedSettingsFields}
@@ -652,6 +711,25 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                   сверх нормы оплачиваются по ставке ×1,5
                 </p>
               </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-text-muted">Тип ввода суммы в столбце «Оклад»</Label>
+                <Tabs
+                  value={multiSalaryInputMode}
+                  onValueChange={(v) => setMultiSalaryInputMode(v as SalaryInputMode)}
+                >
+                  <TabsList className="w-full bg-surface-tint p-1">
+                    <TabsTrigger value="gross" className={`flex-1 ${TAB_TRIGGER_CLASS}`}>
+                      Грязными
+                    </TabsTrigger>
+                    <TabsTrigger value="net" className={`flex-1 ${TAB_TRIGGER_CLASS}`}>
+                      На руки
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <p className="text-xs text-text-muted">
+                  Применяется ко всем сотрудникам сразу — что вводите в «Оклад», то и считается
+                </p>
+              </div>
             </CardContent>
           </Card>
 
@@ -674,7 +752,9 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                   <TableRow>
                     <TableHead className="min-w-[200px] text-text-muted">Сотрудник</TableHead>
                     <TableHead className="min-w-[180px] text-text-muted">Должность</TableHead>
-                    <TableHead className="min-w-[160px] text-text-muted">Оклад (тариф)</TableHead>
+                    <TableHead className="min-w-[160px] text-text-muted">
+                      {multiSalaryInputMode === "net" ? "На руки" : "Оклад (тариф)"}
+                    </TableHead>
                     <TableHead className="min-w-[140px] text-text-muted">Отр. дней</TableHead>
                     <TableHead className="min-w-[140px] text-text-muted">Отр. часов</TableHead>
                     <TableHead className="min-w-[180px] text-text-muted">Льгота</TableHead>
