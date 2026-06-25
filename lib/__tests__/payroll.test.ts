@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateGph, calculatePayroll } from "../payroll";
+import { calculateGph, calculatePayroll, prorateSalaryWithOvertime } from "../payroll";
 import { TAX_2026 } from "../tax-config-2026";
 
 describe("calculatePayroll — эталонные примеры (ТОО на ОУР, вычет 30 МРП применён)", () => {
@@ -164,5 +164,60 @@ describe("calculateGph — договор ГПХ (ИПН 10%, ОПВ 10%, ВОС
     const r = calculateGph({ amount: hugeAmount });
     expect(r.opv).toBeCloseTo(TAX_2026.OPV * TAX_2026.OPV_CEILING_MZP * TAX_2026.MZP, 5);
     expect(r.vosms).toBeCloseTo(TAX_2026.VOSMS * TAX_2026.VOSMS_CEILING_MZP * TAX_2026.MZP, 5);
+  });
+});
+
+describe("prorateSalaryWithOvertime", () => {
+  it("полная норма дней и часов — начислено = окладу, без переработки", () => {
+    const r = prorateSalaryWithOvertime({
+      grossSalary: 220000,
+      normDays: 22,
+      daysWorked: 22,
+      hoursWorked: 176,
+    });
+    expect(r.accrued).toBe(220000);
+    expect(r.overtimeDaysPay).toBe(0);
+    expect(r.overtimeHoursPay).toBe(0);
+  });
+
+  it("неполный месяц — пропорциональный пересчёт по дням, без переработки", () => {
+    const r = prorateSalaryWithOvertime({
+      grossSalary: 220000,
+      normDays: 22,
+      daysWorked: 11,
+      hoursWorked: 88,
+    });
+    expect(r.accrued).toBe(110000);
+    expect(r.overtimeDaysPay).toBe(0);
+    expect(r.overtimeHoursPay).toBe(0);
+  });
+
+  it("переработка по дням сверх нормы — доплата ×1,5 за лишние дни", () => {
+    const r = prorateSalaryWithOvertime({
+      grossSalary: 220000,
+      normDays: 22,
+      daysWorked: 24,
+      hoursWorked: 176,
+    });
+    // dailyRate = 220000/22 = 10000; 2 лишних дня × 10000 × 1.5 = 30000
+    expect(r.overtimeDaysPay).toBe(30000);
+    expect(r.accrued).toBe(250000);
+  });
+
+  it("переработка по часам сверх нормы — доплата ×1,5 за лишние часы", () => {
+    const r = prorateSalaryWithOvertime({
+      grossSalary: 220000,
+      normDays: 22,
+      daysWorked: 22,
+      hoursWorked: 180,
+    });
+    // hourlyRate = 220000/(22×8) = 1250; 4 лишних часа × 1250 × 1.5 = 7500
+    expect(r.overtimeHoursPay).toBe(7500);
+    expect(r.accrued).toBe(227500);
+  });
+
+  it("норма дней = 0 — возвращает оклад без деления на ноль", () => {
+    const r = prorateSalaryWithOvertime({ grossSalary: 220000, normDays: 0, daysWorked: 0, hoursWorked: 0 });
+    expect(r.accrued).toBe(220000);
   });
 });

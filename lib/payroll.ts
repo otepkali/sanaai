@@ -151,6 +151,71 @@ export function calculatePayroll(input: PayrollInput): PayrollResult {
   };
 }
 
+export const HOURS_PER_DAY_NORM = 8;
+export const OVERTIME_RATE_MULTIPLIER = 1.5;
+
+export interface ProrateWithOvertimeInput {
+  /** Оклад (тариф) за полный месяц, тенге */
+  grossSalary: number;
+  /** Норма рабочих дней в месяце (40-час. неделя, пятидневка) */
+  normDays: number;
+  /** Фактически отработано дней */
+  daysWorked: number;
+  /** Фактически отработано часов */
+  hoursWorked: number;
+}
+
+export interface ProrateWithOvertimeResult {
+  /** Итоговая начисленная сумма с учётом переработки */
+  accrued: number;
+  /** Доплата за дни сверх нормы (в полуторном размере) */
+  overtimeDaysPay: number;
+  /** Доплата за часы сверх нормы (в полуторном размере) */
+  overtimeHoursPay: number;
+  dailyRate: number;
+  hourlyRate: number;
+}
+
+/**
+ * Пропорциональный пересчёт оклада по факту отработанных дней. Если дней или
+ * часов отработано БОЛЬШЕ нормы — оклад за норму выплачивается полностью, а
+ * превышение (по дням и отдельно по часам) оплачивается по ставке ×1,5,
+ * как при сверхурочной работе (ст. 88 Трудового кодекса РК).
+ */
+export function prorateSalaryWithOvertime(input: ProrateWithOvertimeInput): ProrateWithOvertimeResult {
+  const { grossSalary, normDays, daysWorked, hoursWorked } = input;
+
+  if (normDays <= 0) {
+    return { accrued: Math.round(grossSalary), overtimeDaysPay: 0, overtimeHoursPay: 0, dailyRate: 0, hourlyRate: 0 };
+  }
+
+  const dailyRate = grossSalary / normDays;
+  const hourlyRate = grossSalary / (normDays * HOURS_PER_DAY_NORM);
+  const normHours = normDays * HOURS_PER_DAY_NORM;
+
+  let baseAccrued: number;
+  let overtimeDaysPay = 0;
+  if (daysWorked > normDays) {
+    overtimeDaysPay = (daysWorked - normDays) * dailyRate * OVERTIME_RATE_MULTIPLIER;
+    baseAccrued = grossSalary + overtimeDaysPay;
+  } else {
+    baseAccrued = grossSalary * (daysWorked / normDays);
+  }
+
+  let overtimeHoursPay = 0;
+  if (hoursWorked > normHours) {
+    overtimeHoursPay = (hoursWorked - normHours) * hourlyRate * OVERTIME_RATE_MULTIPLIER;
+  }
+
+  return {
+    accrued: Math.round(baseAccrued + overtimeHoursPay),
+    overtimeDaysPay: Math.round(overtimeDaysPay),
+    overtimeHoursPay: Math.round(overtimeHoursPay),
+    dailyRate,
+    hourlyRate,
+  };
+}
+
 export interface GphInput {
   /** Сумма вознаграждения по договору ГПХ, тенге */
   amount: number;

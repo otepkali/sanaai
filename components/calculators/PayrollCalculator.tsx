@@ -25,7 +25,13 @@ import {
 } from "@/components/ui/table";
 import { MoneyInput } from "@/components/calculators/MoneyInput";
 import { ResultBreakdown, type BreakdownRow } from "@/components/ResultBreakdown";
-import { calculateGph, calculatePayroll, type PayrollMode } from "@/lib/payroll";
+import {
+  calculateGph,
+  calculatePayroll,
+  prorateSalaryWithOvertime,
+  HOURS_PER_DAY_NORM,
+  type PayrollMode,
+} from "@/lib/payroll";
 import { payrollFormSchema } from "@/lib/schemas";
 import { formatPercent, formatTenge } from "@/lib/format";
 import { PAYROLL_BENEFIT_CATEGORIES, type BenefitCategory } from "@/lib/tax-config-2026";
@@ -37,7 +43,6 @@ import type { ReportData } from "@/lib/reports/types";
 
 type PayrollSubMode = "single" | "multiple" | "gph";
 
-const HOURS_PER_DAY = 8;
 const CURRENT_MONTH = new Date().getMonth() + 1;
 
 interface EditableEmployee {
@@ -46,6 +51,7 @@ interface EditableEmployee {
   position: string;
   grossSalary: number;
   daysWorked: number;
+  hoursWorked: number;
   benefitCategory: BenefitCategory;
 }
 
@@ -56,6 +62,7 @@ const createEmployee = (workingDaysNorm: number): EditableEmployee => ({
   position: "",
   grossSalary: 300000,
   daysWorked: workingDaysNorm,
+  hoursWorked: workingDaysNorm * HOURS_PER_DAY_NORM,
   benefitCategory: "none",
 });
 
@@ -79,6 +86,7 @@ interface MultipleInput {
     position: string;
     grossSalary: number;
     daysWorked: number;
+    hoursWorked: number;
     benefitCategory: BenefitCategory;
   }>;
 }
@@ -160,12 +168,14 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
   });
 
   const employeeResults = employees.map((employee) => {
-    const proratedSalary =
-      workingDaysNorm > 0
-        ? Math.round((employee.grossSalary * employee.daysWorked) / workingDaysNorm)
-        : employee.grossSalary;
+    const overtime = prorateSalaryWithOvertime({
+      grossSalary: employee.grossSalary,
+      normDays: workingDaysNorm,
+      daysWorked: employee.daysWorked,
+      hoursWorked: employee.hoursWorked,
+    });
     const result = calculatePayroll({
-      grossSalary: proratedSalary,
+      grossSalary: overtime.accrued,
       mode,
       applyStandardDeduction,
       benefitCategory: employee.benefitCategory,
@@ -176,11 +186,22 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
     const totalWithheld = result.opv + result.vosms + result.ipn;
     const totalDeductions = result.standardDeduction + result.disabilityDeductionMonthly + result.vosms + result.opv;
     const totalEmployerGross = result.so + result.oosms + result.opvr + result.snGross;
-    return { employee, proratedSalary, result, totalWithheld, totalDeductions, totalEmployerGross };
+    return {
+      employee,
+      proratedSalary: overtime.accrued,
+      overtimeDaysPay: overtime.overtimeDaysPay,
+      overtimeHoursPay: overtime.overtimeHoursPay,
+      result,
+      totalWithheld,
+      totalDeductions,
+      totalEmployerGross,
+    };
   });
   const multipleTotals = employeeResults.reduce(
-    (acc, { proratedSalary, result: r, totalWithheld, totalDeductions, totalEmployerGross }) => ({
+    (acc, { proratedSalary, overtimeDaysPay, overtimeHoursPay, result: r, totalWithheld, totalDeductions, totalEmployerGross }) => ({
       accrued: acc.accrued + proratedSalary,
+      overtimeDaysPay: acc.overtimeDaysPay + overtimeDaysPay,
+      overtimeHoursPay: acc.overtimeHoursPay + overtimeHoursPay,
       opv: acc.opv + r.opv,
       vosms: acc.vosms + r.vosms,
       ipn: acc.ipn + r.ipn,
@@ -197,6 +218,8 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
     }),
     {
       accrued: 0,
+      overtimeDaysPay: 0,
+      overtimeHoursPay: 0,
       opv: 0,
       vosms: 0,
       ipn: 0,
@@ -224,6 +247,13 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
   function removeEmployee(id: number) {
     setEmployees((prev) => (prev.length > 1 ? prev.filter((e) => e.id !== id) : prev));
   }
+  function handleMonthChange(month: number) {
+    setSelectedMonth(month);
+    const newNorm = getWorkingDaysNorm(month);
+    setEmployees((prev) =>
+      prev.map((e) => ({ ...e, daysWorked: newNorm, hoursWorked: newNorm * HOURS_PER_DAY_NORM }))
+    );
+  }
 
   const savedInput: PayrollSavedInput =
     subMode === "single"
@@ -235,13 +265,16 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
             applyStandardDeduction,
             bornBeforeJan1975,
             selectedMonth,
-            employees: employees.map(({ name, position, grossSalary: gs, daysWorked, benefitCategory: bc }) => ({
-              name,
-              position,
-              grossSalary: gs,
-              daysWorked,
-              benefitCategory: bc,
-            })),
+            employees: employees.map(
+              ({ name, position, grossSalary: gs, daysWorked, hoursWorked, benefitCategory: bc }) => ({
+                name,
+                position,
+                grossSalary: gs,
+                daysWorked,
+                hoursWorked,
+                benefitCategory: bc,
+              })
+            ),
           }
         : { subMode, amount: gphAmount };
 
@@ -300,6 +333,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                 { label: "Ч.", flex: 0.6, align: "right" },
                 { label: "Льгота", flex: 1.4 },
                 { label: "Начислено", flex: 1.3, align: "right" },
+                { label: "в т.ч. переработка ×1,5", flex: 1.3, align: "right" },
                 { label: "ОПВ", flex: 1, align: "right" },
                 { label: "ОСМС", flex: 1, align: "right" },
                 { label: "ИПН", flex: 1, align: "right" },
@@ -317,14 +351,24 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
               ],
               rows: [
                 ...employeeResults.map(
-                  ({ employee, proratedSalary, result: r, totalWithheld, totalDeductions, totalEmployerGross }) => [
+                  ({
+                    employee,
+                    proratedSalary,
+                    overtimeDaysPay,
+                    overtimeHoursPay,
+                    result: r,
+                    totalWithheld,
+                    totalDeductions,
+                    totalEmployerGross,
+                  }) => [
                     employee.name || "Сотрудник",
                     employee.position || "—",
                     formatTenge(employee.grossSalary),
                     String(employee.daysWorked),
-                    String(employee.daysWorked * HOURS_PER_DAY),
+                    String(employee.hoursWorked),
                     PAYROLL_BENEFIT_CATEGORIES.find((c) => c.id === employee.benefitCategory)?.label ?? "—",
                     formatTenge(proratedSalary),
+                    formatTenge(overtimeDaysPay + overtimeHoursPay),
                     formatTenge(r.opv),
                     formatTenge(r.vosms),
                     formatTenge(r.ipn),
@@ -349,6 +393,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                   "",
                   "",
                   formatTenge(multipleTotals.accrued),
+                  formatTenge(multipleTotals.overtimeDaysPay + multipleTotals.overtimeHoursPay),
                   formatTenge(multipleTotals.opv),
                   formatTenge(multipleTotals.vosms),
                   formatTenge(multipleTotals.ipn),
@@ -559,7 +604,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
               {sharedSettingsFields}
               <div className="space-y-1.5">
                 <Label className="text-sm text-text-muted">Месяц</Label>
-                <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                <Select value={String(selectedMonth)} onValueChange={(v) => handleMonthChange(Number(v))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -572,8 +617,9 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-text-muted">
-                  Норма — {workingDaysNorm} раб. дней (40-час. неделя, пятидневка). Используется для
-                  пропорционального пересчёта оклада по отработанным дням
+                  Норма — {workingDaysNorm} раб. дней (40-час. неделя, пятидневка), {workingDaysNorm * HOURS_PER_DAY_NORM} ч.
+                  При смене месяца дни/часы у всех сотрудников подставляются автоматически. Дни и часы
+                  сверх нормы оплачиваются по ставке ×1,5
                 </p>
               </div>
             </CardContent>
@@ -600,6 +646,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                     <TableHead className="min-w-[180px] text-text-muted">Должность</TableHead>
                     <TableHead className="min-w-[160px] text-text-muted">Оклад (тариф)</TableHead>
                     <TableHead className="w-28 text-text-muted">Отр. дней</TableHead>
+                    <TableHead className="w-28 text-text-muted">Отр. часов</TableHead>
                     <TableHead className="min-w-[180px] text-text-muted">Льгота</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
@@ -643,6 +690,19 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                           onChange={(e) =>
                             updateEmployee(employee.id, {
                               daysWorked: Math.max(0, Number(e.target.value) || 0),
+                            })
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="font-tabular"
+                          value={employee.hoursWorked || ""}
+                          onChange={(e) =>
+                            updateEmployee(employee.id, {
+                              hoursWorked: Math.max(0, Number(e.target.value) || 0),
                             })
                           }
                         />
