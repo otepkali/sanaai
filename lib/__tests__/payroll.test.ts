@@ -121,6 +121,12 @@ describe("calculatePayroll — прочие флаги", () => {
     expect(r.sn).toBeCloseTo(expectedSn, 5);
   });
 
+  it("snGross — полная сумма СН до зачёта СО, sn = max(0, snGross − so)", () => {
+    const r = calculatePayroll({ grossSalary: 300000 });
+    expect(r.snGross).toBeCloseTo(TAX_2026.SN * (300000 - r.opv - r.vosms), 5);
+    expect(r.sn).toBeCloseTo(Math.max(0, r.snGross - r.so), 5);
+  });
+
   it("полная стоимость для работодателя складывается из оклада и всех начислений", () => {
     const r = calculatePayroll({ grossSalary: 300000 });
     expect(r.employerCost).toBeCloseTo(

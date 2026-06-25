@@ -39,6 +39,8 @@ export interface PayrollResult {
   oosms: number;
   opvr: number;
   sn: number;
+  /** СН до зачёта СО (ст. 484 НК РК) — отдельная полная сумма, как в ведомостях 1С */
+  snGross: number;
   /** Полная стоимость работника для работодателя */
   employerCost: number;
 
@@ -119,8 +121,10 @@ export function calculatePayroll(input: PayrollInput): PayrollResult {
   // 8. ОПВР = 3,5% × оклад (не начисляется для рождённых до 01.01.1975)
   const opvr = bornBeforeJan1975 ? 0 : TAX_2026.OPVR * grossSalary;
 
-  // 9. СН = max(0, 6% × (оклад − ОПВ − ВОСМС) − СО)
-  const sn = Math.max(0, TAX_2026.SN * (grossSalary - opv - vosms) - so);
+  // 9. СН (полная сумма, до зачёта) = 6% × (оклад − ОПВ − ВОСМС)
+  const snGross = TAX_2026.SN * Math.max(0, grossSalary - opv - vosms);
+  // 9b. СН к уплате = max(0, СН полная − СО) — зачёт по ст. 484 НК РК
+  const sn = Math.max(0, snGross - so);
 
   // 10. Полная стоимость для работодателя
   const employerCost = grossSalary + so + oosms + opvr + sn;
@@ -141,6 +145,7 @@ export function calculatePayroll(input: PayrollInput): PayrollResult {
     oosms,
     opvr,
     sn,
+    snGross,
     employerCost,
     isProgressiveIpn,
   };

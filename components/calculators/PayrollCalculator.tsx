@@ -19,6 +19,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -36,10 +37,16 @@ import type { ReportData } from "@/lib/reports/types";
 
 type PayrollSubMode = "single" | "multiple" | "gph";
 
+const DEFAULT_WORKING_DAYS = 21;
+const HOURS_PER_DAY = 8;
+
 interface EditableEmployee {
   id: number;
   name: string;
+  position: string;
   grossSalary: number;
+  daysWorked: number;
+  hoursWorked: number;
   benefitCategory: BenefitCategory;
 }
 
@@ -47,7 +54,10 @@ let nextEmployeeId = 1;
 const createEmployee = (): EditableEmployee => ({
   id: nextEmployeeId++,
   name: "",
+  position: "",
   grossSalary: 300000,
+  daysWorked: DEFAULT_WORKING_DAYS,
+  hoursWorked: DEFAULT_WORKING_DAYS * HOURS_PER_DAY,
   benefitCategory: "none",
 });
 
@@ -65,7 +75,15 @@ interface MultipleInput {
   mode: PayrollMode;
   applyStandardDeduction: boolean;
   bornBeforeJan1975: boolean;
-  employees: Array<{ name: string; grossSalary: number; benefitCategory: BenefitCategory }>;
+  workingDaysNorm: number;
+  employees: Array<{
+    name: string;
+    position: string;
+    grossSalary: number;
+    daysWorked: number;
+    hoursWorked: number;
+    benefitCategory: BenefitCategory;
+  }>;
 }
 
 interface GphSavedInput {
@@ -111,6 +129,9 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
   );
 
   // Несколько сотрудников
+  const [workingDaysNorm, setWorkingDaysNorm] = useState(
+    initialInput?.subMode === "multiple" ? initialInput.workingDaysNorm : DEFAULT_WORKING_DAYS
+  );
   const [employees, setEmployees] = useState<EditableEmployee[]>(() =>
     initialInput?.subMode === "multiple" && initialInput.employees.length > 0
       ? initialInput.employees.map((e) => ({ ...createEmployee(), ...e }))
@@ -140,22 +161,58 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
     bornBeforeJan1975,
   });
 
-  const employeeResults = employees.map((employee) => ({
-    employee,
-    result: calculatePayroll({
-      grossSalary: employee.grossSalary,
+  const employeeResults = employees.map((employee) => {
+    const proratedSalary =
+      workingDaysNorm > 0
+        ? Math.round((employee.grossSalary * employee.daysWorked) / workingDaysNorm)
+        : employee.grossSalary;
+    const result = calculatePayroll({
+      grossSalary: proratedSalary,
       mode,
       applyStandardDeduction,
       benefitCategory: employee.benefitCategory,
       bornBeforeJan1975,
-    }),
-  }));
+    });
+    // В ведомостях 1С статьи показывают полными суммами, без зачёта СО против СН
+    // (зачёт по ст. 484 НК РК применяется при уплате на уровне декларации, не построчно).
+    const totalWithheld = result.opv + result.vosms + result.ipn;
+    const totalDeductions = result.standardDeduction + result.disabilityDeductionMonthly + result.vosms + result.opv;
+    const totalEmployerGross = result.so + result.oosms + result.opvr + result.snGross;
+    return { employee, proratedSalary, result, totalWithheld, totalDeductions, totalEmployerGross };
+  });
   const multipleTotals = employeeResults.reduce(
-    (acc, { result: r }) => ({
+    (acc, { proratedSalary, result: r, totalWithheld, totalDeductions, totalEmployerGross }) => ({
+      accrued: acc.accrued + proratedSalary,
+      opv: acc.opv + r.opv,
+      vosms: acc.vosms + r.vosms,
+      ipn: acc.ipn + r.ipn,
+      totalWithheld: acc.totalWithheld + totalWithheld,
       netIncome: acc.netIncome + r.netIncome,
+      standardDeduction: acc.standardDeduction + r.standardDeduction,
+      totalDeductions: acc.totalDeductions + totalDeductions,
+      so: acc.so + r.so,
+      oosms: acc.oosms + r.oosms,
+      opvr: acc.opvr + r.opvr,
+      snGross: acc.snGross + r.snGross,
+      totalEmployerGross: acc.totalEmployerGross + totalEmployerGross,
       employerCost: acc.employerCost + r.employerCost,
     }),
-    { netIncome: 0, employerCost: 0 }
+    {
+      accrued: 0,
+      opv: 0,
+      vosms: 0,
+      ipn: 0,
+      totalWithheld: 0,
+      netIncome: 0,
+      standardDeduction: 0,
+      totalDeductions: 0,
+      so: 0,
+      oosms: 0,
+      opvr: 0,
+      snGross: 0,
+      totalEmployerGross: 0,
+      employerCost: 0,
+    }
   );
 
   const gphResult = calculateGph({ amount: gphAmount });
@@ -179,11 +236,17 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
             mode,
             applyStandardDeduction,
             bornBeforeJan1975,
-            employees: employees.map(({ name, grossSalary: gs, benefitCategory: bc }) => ({
-              name,
-              grossSalary: gs,
-              benefitCategory: bc,
-            })),
+            workingDaysNorm,
+            employees: employees.map(
+              ({ name, position, grossSalary: gs, daysWorked, hoursWorked, benefitCategory: bc }) => ({
+                name,
+                position,
+                grossSalary: gs,
+                daysWorked,
+                hoursWorked,
+                benefitCategory: bc,
+              })
+            ),
           }
         : { subMode, amount: gphAmount };
 
@@ -224,17 +287,54 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
             date: new Date().toISOString().slice(0, 10),
             inputs: [
               { label: "Режим работодателя", value: mode === "too_our" ? "ТОО на ОУР" : "ИП" },
+              { label: "Рабочих дней в периоде (норма)", value: String(workingDaysNorm) },
               { label: "Число сотрудников", value: String(employees.length) },
             ],
             rows: [
-              ...employeeResults.map(({ employee, result: r }) => ({
-                label: employee.name || "Сотрудник",
-                value: `${formatTenge(r.netIncome)} на руки`,
-              })),
-              { label: "Итого на руки", value: formatTenge(multipleTotals.netIncome), bold: true },
+              ...employeeResults.flatMap(
+                ({ employee, proratedSalary, result: r, totalWithheld, totalDeductions, totalEmployerGross }, index) => [
+                  {
+                    label: `${index + 1}. ${employee.name || "Сотрудник"}${employee.position ? ` — ${employee.position}` : ""}`,
+                    value: "",
+                    bold: true,
+                  },
+                  { label: "Оклад (тариф)", value: formatTenge(employee.grossSalary) },
+                  {
+                    label: "Отработано",
+                    value: `${employee.daysWorked} дн. (норма ${workingDaysNorm}), ${employee.hoursWorked} ч.`,
+                  },
+                  { label: "Всего начислено", value: formatTenge(proratedSalary) },
+                  { label: "ОПВ", value: formatTenge(r.opv) },
+                  { label: "Взносы ОСМС (ВОСМС)", value: formatTenge(r.vosms) },
+                  { label: `ИПН (${formatPercent(r.ipnRate)})`, value: formatTenge(r.ipn) },
+                  { label: "Всего удержано", value: formatTenge(totalWithheld) },
+                  { label: "Выплачено (на руки)", value: formatTenge(r.netIncome), bold: true },
+                  { label: "Базовый вычет", value: formatTenge(r.standardDeduction) },
+                  { label: "Вычет ВОСМС", value: formatTenge(r.vosms) },
+                  { label: "Вычет ОПВ", value: formatTenge(r.opv) },
+                  { label: "Налоговые вычеты — итого", value: formatTenge(totalDeductions) },
+                  { label: "СО", value: formatTenge(r.so) },
+                  { label: "Отчисления ОСМС (ООСМС)", value: formatTenge(r.oosms) },
+                  { label: "ОПВР", value: formatTenge(r.opvr) },
+                  { label: "Социальный налог (СН)", value: formatTenge(r.snGross) },
+                  { label: "Всего отчислений (работодатель)", value: formatTenge(totalEmployerGross), bold: true },
+                ]
+              ),
+              { label: "ИТОГО ПО ВСЕМ СОТРУДНИКАМ", value: "", bold: true },
+              { label: "Всего начислено", value: formatTenge(multipleTotals.accrued) },
+              { label: "Итого ОПВ", value: formatTenge(multipleTotals.opv) },
+              { label: "Итого взносы ОСМС (ВОСМС)", value: formatTenge(multipleTotals.vosms) },
+              { label: "Итого ИПН", value: formatTenge(multipleTotals.ipn) },
+              { label: "Всего удержано", value: formatTenge(multipleTotals.totalWithheld) },
+              { label: "Итого выплачено (на руки)", value: formatTenge(multipleTotals.netIncome), bold: true },
+              { label: "Налоговые вычеты — итого", value: formatTenge(multipleTotals.totalDeductions) },
+              { label: "Итого СО", value: formatTenge(multipleTotals.so) },
+              { label: "Итого отчисления ОСМС (ООСМС)", value: formatTenge(multipleTotals.oosms) },
+              { label: "Итого ОПВР", value: formatTenge(multipleTotals.opvr) },
+              { label: "Итого социальный налог (СН)", value: formatTenge(multipleTotals.snGross) },
               {
-                label: "Итого расходы работодателя",
-                value: formatTenge(multipleTotals.employerCost),
+                label: "Всего отчислений (работодатель)",
+                value: formatTenge(multipleTotals.totalEmployerGross),
                 bold: true,
               },
             ],
@@ -426,14 +526,29 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
               <CardTitle className="text-lg">Параметры</CardTitle>
               <CardDescription>Общие для всех сотрудников</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-5">{sharedSettingsFields}</CardContent>
+            <CardContent className="space-y-5">
+              {sharedSettingsFields}
+              <div className="space-y-1.5">
+                <Label className="text-sm text-text-muted">Рабочих дней в периоде (норма)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  className="font-tabular"
+                  value={workingDaysNorm || ""}
+                  onChange={(e) => setWorkingDaysNorm(Math.max(1, Number(e.target.value) || 1))}
+                />
+                <p className="text-xs text-text-muted">
+                  Используется для пропорционального пересчёта оклада по отработанным дням
+                </p>
+              </div>
+            </CardContent>
           </Card>
 
           <Card className="rounded-2xl border-border shadow-soft">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-lg">Сотрудники</CardTitle>
-                <CardDescription>Форма 200 — расчёт по нескольким работникам</CardDescription>
+                <CardDescription>Расчётная ведомость — расчёт по нескольким работникам</CardDescription>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={addEmployee} className="gap-1">
                 <Plus className="h-4 w-4" />
@@ -444,85 +559,239 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-text-muted">Имя</TableHead>
-                    <TableHead className="w-40 text-text-muted">Оклад</TableHead>
-                    <TableHead className="w-48 text-text-muted">Льгота</TableHead>
-                    <TableHead className="w-32 text-right text-text-muted">На руки</TableHead>
-                    <TableHead className="w-10" />
+                    <TableHead rowSpan={2} className="align-bottom text-text-muted">
+                      Сотрудник
+                    </TableHead>
+                    <TableHead rowSpan={2} className="w-36 align-bottom text-text-muted">
+                      Должность
+                    </TableHead>
+                    <TableHead rowSpan={2} className="w-32 align-bottom text-text-muted">
+                      Оклад (тариф)
+                    </TableHead>
+                    <TableHead rowSpan={2} className="w-24 align-bottom text-text-muted">
+                      Отр. дней
+                    </TableHead>
+                    <TableHead rowSpan={2} className="w-24 align-bottom text-text-muted">
+                      Отр. часов
+                    </TableHead>
+                    <TableHead rowSpan={2} className="w-36 align-bottom text-text-muted">
+                      Льгота
+                    </TableHead>
+                    <TableHead colSpan={6} className="border-l border-border text-center text-text-muted">
+                      Начисления и удержания
+                    </TableHead>
+                    <TableHead colSpan={4} className="border-l border-border text-center text-text-muted">
+                      Налоговые вычеты
+                    </TableHead>
+                    <TableHead colSpan={5} className="border-l border-border text-center text-text-muted">
+                      Отчисления работодателя
+                    </TableHead>
+                    <TableHead rowSpan={2} className="w-10" />
+                  </TableRow>
+                  <TableRow>
+                    <TableHead className="border-l border-border text-right text-text-muted">
+                      Начислено
+                    </TableHead>
+                    <TableHead className="text-right text-text-muted">ОПВ</TableHead>
+                    <TableHead className="text-right text-text-muted">ОСМС</TableHead>
+                    <TableHead className="text-right text-text-muted">ИПН</TableHead>
+                    <TableHead className="text-right text-text-muted">Удержано</TableHead>
+                    <TableHead className="text-right text-text-muted">Выплачено</TableHead>
+                    <TableHead className="border-l border-border text-right text-text-muted">Базовый</TableHead>
+                    <TableHead className="text-right text-text-muted">ВОСМС</TableHead>
+                    <TableHead className="text-right text-text-muted">ОПВ</TableHead>
+                    <TableHead className="text-right text-text-muted">Итого</TableHead>
+                    <TableHead className="border-l border-border text-right text-text-muted">СО</TableHead>
+                    <TableHead className="text-right text-text-muted">ОСМС</TableHead>
+                    <TableHead className="text-right text-text-muted">ОПВР</TableHead>
+                    <TableHead className="text-right text-text-muted">СН</TableHead>
+                    <TableHead className="text-right text-text-muted">Всего отчислений</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {employeeResults.map(({ employee, result: r }) => (
-                    <TableRow key={employee.id}>
-                      <TableCell>
-                        <Input
-                          value={employee.name}
-                          onChange={(e) => updateEmployee(employee.id, { name: e.target.value })}
-                          placeholder="Имя сотрудника"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min={0}
-                          className="font-tabular"
-                          value={employee.grossSalary || ""}
-                          onChange={(e) =>
-                            updateEmployee(employee.id, {
-                              grossSalary: Math.max(0, Number(e.target.value) || 0),
-                            })
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={employee.benefitCategory}
-                          onValueChange={(v) =>
-                            updateEmployee(employee.id, { benefitCategory: v as BenefitCategory })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {PAYROLL_BENEFIT_CATEGORIES.map((c) => (
-                              <SelectItem key={c.id} value={c.id}>
-                                {c.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="font-tabular text-right">{formatTenge(r.netIncome)}</TableCell>
-                      <TableCell>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-text-muted hover:text-danger"
-                          onClick={() => removeEmployee(employee.id)}
-                          disabled={employees.length === 1}
-                          aria-label="Удалить сотрудника"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {employeeResults.map(
+                    ({ employee, proratedSalary, result: r, totalWithheld, totalDeductions, totalEmployerGross }) => (
+                      <TableRow key={employee.id}>
+                        <TableCell>
+                          <Input
+                            value={employee.name}
+                            onChange={(e) => updateEmployee(employee.id, { name: e.target.value })}
+                            placeholder="Имя сотрудника"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            value={employee.position}
+                            onChange={(e) => updateEmployee(employee.id, { position: e.target.value })}
+                            placeholder="Должность"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min={0}
+                            className="font-tabular"
+                            value={employee.grossSalary || ""}
+                            onChange={(e) =>
+                              updateEmployee(employee.id, {
+                                grossSalary: Math.max(0, Number(e.target.value) || 0),
+                              })
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min={0}
+                            className="font-tabular"
+                            value={employee.daysWorked || ""}
+                            onChange={(e) =>
+                              updateEmployee(employee.id, {
+                                daysWorked: Math.max(0, Number(e.target.value) || 0),
+                              })
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min={0}
+                            className="font-tabular"
+                            value={employee.hoursWorked || ""}
+                            onChange={(e) =>
+                              updateEmployee(employee.id, {
+                                hoursWorked: Math.max(0, Number(e.target.value) || 0),
+                              })
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={employee.benefitCategory}
+                            onValueChange={(v) =>
+                              updateEmployee(employee.id, { benefitCategory: v as BenefitCategory })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PAYROLL_BENEFIT_CATEGORIES.map((c) => (
+                                <SelectItem key={c.id} value={c.id}>
+                                  {c.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="border-l border-border font-tabular text-right">
+                          {formatTenge(proratedSalary)}
+                        </TableCell>
+                        <TableCell className="font-tabular text-right">{formatTenge(r.opv)}</TableCell>
+                        <TableCell className="font-tabular text-right">{formatTenge(r.vosms)}</TableCell>
+                        <TableCell className="font-tabular text-right">{formatTenge(r.ipn)}</TableCell>
+                        <TableCell className="font-tabular text-right">{formatTenge(totalWithheld)}</TableCell>
+                        <TableCell className="font-tabular text-right font-medium">
+                          {formatTenge(r.netIncome)}
+                        </TableCell>
+                        <TableCell className="border-l border-border font-tabular text-right">
+                          {formatTenge(r.standardDeduction)}
+                        </TableCell>
+                        <TableCell className="font-tabular text-right">{formatTenge(r.vosms)}</TableCell>
+                        <TableCell className="font-tabular text-right">{formatTenge(r.opv)}</TableCell>
+                        <TableCell className="font-tabular text-right">{formatTenge(totalDeductions)}</TableCell>
+                        <TableCell className="border-l border-border font-tabular text-right">
+                          {formatTenge(r.so)}
+                        </TableCell>
+                        <TableCell className="font-tabular text-right">{formatTenge(r.oosms)}</TableCell>
+                        <TableCell className="font-tabular text-right">{formatTenge(r.opvr)}</TableCell>
+                        <TableCell className="font-tabular text-right">{formatTenge(r.snGross)}</TableCell>
+                        <TableCell className="font-tabular text-right font-medium">
+                          {formatTenge(totalEmployerGross)}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-text-muted hover:text-danger"
+                            onClick={() => removeEmployee(employee.id)}
+                            disabled={employees.length === 1}
+                            aria-label="Удалить сотрудника"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  )}
                 </TableBody>
+                <TableFooter>
+                  <TableRow>
+                    <TableCell colSpan={6} className="font-semibold">
+                      Итого
+                    </TableCell>
+                    <TableCell className="border-l border-border font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.accrued)}
+                    </TableCell>
+                    <TableCell className="font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.opv)}
+                    </TableCell>
+                    <TableCell className="font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.vosms)}
+                    </TableCell>
+                    <TableCell className="font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.ipn)}
+                    </TableCell>
+                    <TableCell className="font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.totalWithheld)}
+                    </TableCell>
+                    <TableCell className="font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.netIncome)}
+                    </TableCell>
+                    <TableCell className="border-l border-border font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.standardDeduction)}
+                    </TableCell>
+                    <TableCell className="font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.vosms)}
+                    </TableCell>
+                    <TableCell className="font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.opv)}
+                    </TableCell>
+                    <TableCell className="font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.totalDeductions)}
+                    </TableCell>
+                    <TableCell className="border-l border-border font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.so)}
+                    </TableCell>
+                    <TableCell className="font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.oosms)}
+                    </TableCell>
+                    <TableCell className="font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.opvr)}
+                    </TableCell>
+                    <TableCell className="font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.snGross)}
+                    </TableCell>
+                    <TableCell className="font-tabular text-right font-semibold">
+                      {formatTenge(multipleTotals.totalEmployerGross)}
+                    </TableCell>
+                    <TableCell />
+                  </TableRow>
+                </TableFooter>
               </Table>
 
               <div className="mt-5 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
                 <div className="rounded-xl bg-primary-bg px-4 py-4">
-                  <p className="text-sm text-text-muted">Итого на руки</p>
+                  <p className="text-sm text-text-muted">Итого выплачено (на руки)</p>
                   <p className="font-tabular mt-1 text-2xl font-semibold text-primary">
                     {formatTenge(multipleTotals.netIncome)}
                   </p>
                 </div>
                 <div className="rounded-xl bg-primary-bg px-4 py-4">
-                  <p className="text-sm text-text-muted">Итого расходы работодателя</p>
+                  <p className="text-sm text-text-muted">Всего отчислений (работодатель)</p>
                   <p className="font-tabular mt-1 text-2xl font-semibold text-primary">
-                    {formatTenge(multipleTotals.employerCost)}
+                    {formatTenge(multipleTotals.totalEmployerGross)}
                   </p>
                 </div>
               </div>
