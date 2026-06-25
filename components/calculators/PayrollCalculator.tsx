@@ -19,7 +19,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -30,6 +29,7 @@ import { calculateGph, calculatePayroll, type PayrollMode } from "@/lib/payroll"
 import { payrollFormSchema } from "@/lib/schemas";
 import { formatPercent, formatTenge } from "@/lib/format";
 import { PAYROLL_BENEFIT_CATEGORIES, type BenefitCategory } from "@/lib/tax-config-2026";
+import { WORKING_DAYS_2026, getWorkingDaysNorm } from "@/lib/working-calendar-2026";
 import { useAutosaveCalculation } from "@/lib/hooks/useAutosaveCalculation";
 import type { CalculationRow } from "@/lib/supabase/calculations";
 import { DownloadPdfButton } from "@/components/DownloadPdfButton";
@@ -37,8 +37,8 @@ import type { ReportData } from "@/lib/reports/types";
 
 type PayrollSubMode = "single" | "multiple" | "gph";
 
-const DEFAULT_WORKING_DAYS = 21;
 const HOURS_PER_DAY = 8;
+const CURRENT_MONTH = new Date().getMonth() + 1;
 
 interface EditableEmployee {
   id: number;
@@ -46,18 +46,16 @@ interface EditableEmployee {
   position: string;
   grossSalary: number;
   daysWorked: number;
-  hoursWorked: number;
   benefitCategory: BenefitCategory;
 }
 
 let nextEmployeeId = 1;
-const createEmployee = (): EditableEmployee => ({
+const createEmployee = (workingDaysNorm: number): EditableEmployee => ({
   id: nextEmployeeId++,
   name: "",
   position: "",
   grossSalary: 300000,
-  daysWorked: DEFAULT_WORKING_DAYS,
-  hoursWorked: DEFAULT_WORKING_DAYS * HOURS_PER_DAY,
+  daysWorked: workingDaysNorm,
   benefitCategory: "none",
 });
 
@@ -75,13 +73,12 @@ interface MultipleInput {
   mode: PayrollMode;
   applyStandardDeduction: boolean;
   bornBeforeJan1975: boolean;
-  workingDaysNorm: number;
+  selectedMonth: number;
   employees: Array<{
     name: string;
     position: string;
     grossSalary: number;
     daysWorked: number;
-    hoursWorked: number;
     benefitCategory: BenefitCategory;
   }>;
 }
@@ -129,13 +126,14 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
   );
 
   // Несколько сотрудников
-  const [workingDaysNorm, setWorkingDaysNorm] = useState(
-    initialInput?.subMode === "multiple" ? initialInput.workingDaysNorm : DEFAULT_WORKING_DAYS
+  const [selectedMonth, setSelectedMonth] = useState(
+    initialInput?.subMode === "multiple" ? initialInput.selectedMonth : CURRENT_MONTH
   );
+  const workingDaysNorm = getWorkingDaysNorm(selectedMonth);
   const [employees, setEmployees] = useState<EditableEmployee[]>(() =>
     initialInput?.subMode === "multiple" && initialInput.employees.length > 0
-      ? initialInput.employees.map((e) => ({ ...createEmployee(), ...e }))
-      : [createEmployee()]
+      ? initialInput.employees.map((e) => ({ ...createEmployee(workingDaysNorm), ...e }))
+      : [createEmployee(workingDaysNorm)]
   );
 
   // ГПХ
@@ -221,7 +219,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
     setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
   }
   function addEmployee() {
-    setEmployees((prev) => [...prev, createEmployee()]);
+    setEmployees((prev) => [...prev, createEmployee(workingDaysNorm)]);
   }
   function removeEmployee(id: number) {
     setEmployees((prev) => (prev.length > 1 ? prev.filter((e) => e.id !== id) : prev));
@@ -236,17 +234,14 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
             mode,
             applyStandardDeduction,
             bornBeforeJan1975,
-            workingDaysNorm,
-            employees: employees.map(
-              ({ name, position, grossSalary: gs, daysWorked, hoursWorked, benefitCategory: bc }) => ({
-                name,
-                position,
-                grossSalary: gs,
-                daysWorked,
-                hoursWorked,
-                benefitCategory: bc,
-              })
-            ),
+            selectedMonth,
+            employees: employees.map(({ name, position, grossSalary: gs, daysWorked, benefitCategory: bc }) => ({
+              name,
+              position,
+              grossSalary: gs,
+              daysWorked,
+              benefitCategory: bc,
+            })),
           }
         : { subMode, amount: gphAmount };
 
@@ -288,7 +283,11 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
             orientation: "landscape",
             inputs: [
               { label: "Режим работодателя", value: mode === "too_our" ? "ТОО на ОУР" : "ИП" },
-              { label: "Рабочих дней в периоде (норма)", value: String(workingDaysNorm) },
+              {
+                label: "Месяц",
+                value: WORKING_DAYS_2026.find((m) => m.value === selectedMonth)?.label ?? String(selectedMonth),
+              },
+              { label: "Норма рабочих дней (40-час., пятидневка)", value: String(workingDaysNorm) },
               { label: "Число сотрудников", value: String(employees.length) },
             ],
             rows: [],
@@ -323,7 +322,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                     employee.position || "—",
                     formatTenge(employee.grossSalary),
                     String(employee.daysWorked),
-                    String(employee.hoursWorked),
+                    String(employee.daysWorked * HOURS_PER_DAY),
                     PAYROLL_BENEFIT_CATEGORIES.find((c) => c.id === employee.benefitCategory)?.label ?? "—",
                     formatTenge(proratedSalary),
                     formatTenge(r.opv),
@@ -559,16 +558,22 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
             <CardContent className="space-y-5">
               {sharedSettingsFields}
               <div className="space-y-1.5">
-                <Label className="text-sm text-text-muted">Рабочих дней в периоде (норма)</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  className="font-tabular"
-                  value={workingDaysNorm || ""}
-                  onChange={(e) => setWorkingDaysNorm(Math.max(1, Number(e.target.value) || 1))}
-                />
+                <Label className="text-sm text-text-muted">Месяц</Label>
+                <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WORKING_DAYS_2026.map((m) => (
+                      <SelectItem key={m.value} value={String(m.value)}>
+                        {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-text-muted">
-                  Используется для пропорционального пересчёта оклада по отработанным дням
+                  Норма — {workingDaysNorm} раб. дней (40-час. неделя, пятидневка). Используется для
+                  пропорционального пересчёта оклада по отработанным дням
                 </p>
               </div>
             </CardContent>
@@ -578,7 +583,9 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-lg">Сотрудники</CardTitle>
-                <CardDescription>Расчётная ведомость — расчёт по нескольким работникам</CardDescription>
+                <CardDescription>
+                  Полная расшифровка по каждому сотруднику — в PDF при печати
+                </CardDescription>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={addEmployee} className="gap-1">
                 <Plus className="h-4 w-4" />
@@ -589,226 +596,92 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead rowSpan={2} className="min-w-[200px] align-bottom text-text-muted">
-                      Сотрудник
-                    </TableHead>
-                    <TableHead rowSpan={2} className="min-w-[180px] align-bottom text-text-muted">
-                      Должность
-                    </TableHead>
-                    <TableHead rowSpan={2} className="min-w-[160px] align-bottom text-text-muted">
-                      Оклад (тариф)
-                    </TableHead>
-                    <TableHead rowSpan={2} className="w-24 align-bottom text-text-muted">
-                      Отр. дней
-                    </TableHead>
-                    <TableHead rowSpan={2} className="w-24 align-bottom text-text-muted">
-                      Отр. часов
-                    </TableHead>
-                    <TableHead rowSpan={2} className="w-40 align-bottom text-text-muted">
-                      Льгота
-                    </TableHead>
-                    <TableHead colSpan={6} className="border-l border-border text-center text-text-muted">
-                      Начисления и удержания
-                    </TableHead>
-                    <TableHead colSpan={4} className="border-l border-border text-center text-text-muted">
-                      Налоговые вычеты
-                    </TableHead>
-                    <TableHead colSpan={5} className="border-l border-border text-center text-text-muted">
-                      Отчисления работодателя
-                    </TableHead>
-                    <TableHead rowSpan={2} className="w-10" />
-                  </TableRow>
-                  <TableRow>
-                    <TableHead className="border-l border-border text-right text-text-muted">
-                      Начислено
-                    </TableHead>
-                    <TableHead className="text-right text-text-muted">ОПВ</TableHead>
-                    <TableHead className="text-right text-text-muted">ОСМС</TableHead>
-                    <TableHead className="text-right text-text-muted">ИПН</TableHead>
-                    <TableHead className="text-right text-text-muted">Удержано</TableHead>
-                    <TableHead className="text-right text-text-muted">Выплачено</TableHead>
-                    <TableHead className="border-l border-border text-right text-text-muted">Базовый</TableHead>
-                    <TableHead className="text-right text-text-muted">ВОСМС</TableHead>
-                    <TableHead className="text-right text-text-muted">ОПВ</TableHead>
-                    <TableHead className="text-right text-text-muted">Итого</TableHead>
-                    <TableHead className="border-l border-border text-right text-text-muted">СО</TableHead>
-                    <TableHead className="text-right text-text-muted">ОСМС</TableHead>
-                    <TableHead className="text-right text-text-muted">ОПВР</TableHead>
-                    <TableHead className="text-right text-text-muted">СН</TableHead>
-                    <TableHead className="text-right text-text-muted">Всего отчислений</TableHead>
+                    <TableHead className="min-w-[200px] text-text-muted">Сотрудник</TableHead>
+                    <TableHead className="min-w-[180px] text-text-muted">Должность</TableHead>
+                    <TableHead className="min-w-[160px] text-text-muted">Оклад (тариф)</TableHead>
+                    <TableHead className="w-28 text-text-muted">Отр. дней</TableHead>
+                    <TableHead className="min-w-[180px] text-text-muted">Льгота</TableHead>
+                    <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {employeeResults.map(
-                    ({ employee, proratedSalary, result: r, totalWithheld, totalDeductions, totalEmployerGross }) => (
-                      <TableRow key={employee.id}>
-                        <TableCell>
-                          <Input
-                            value={employee.name}
-                            onChange={(e) => updateEmployee(employee.id, { name: e.target.value })}
-                            placeholder="Имя сотрудника"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={employee.position}
-                            onChange={(e) => updateEmployee(employee.id, { position: e.target.value })}
-                            placeholder="Должность"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={0}
-                            className="font-tabular"
-                            value={employee.grossSalary || ""}
-                            onChange={(e) =>
-                              updateEmployee(employee.id, {
-                                grossSalary: Math.max(0, Number(e.target.value) || 0),
-                              })
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={0}
-                            className="font-tabular"
-                            value={employee.daysWorked || ""}
-                            onChange={(e) =>
-                              updateEmployee(employee.id, {
-                                daysWorked: Math.max(0, Number(e.target.value) || 0),
-                              })
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={0}
-                            className="font-tabular"
-                            value={employee.hoursWorked || ""}
-                            onChange={(e) =>
-                              updateEmployee(employee.id, {
-                                hoursWorked: Math.max(0, Number(e.target.value) || 0),
-                              })
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={employee.benefitCategory}
-                            onValueChange={(v) =>
-                              updateEmployee(employee.id, { benefitCategory: v as BenefitCategory })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PAYROLL_BENEFIT_CATEGORIES.map((c) => (
-                                <SelectItem key={c.id} value={c.id}>
-                                  {c.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell className="border-l border-border font-tabular text-right">
-                          {formatTenge(proratedSalary)}
-                        </TableCell>
-                        <TableCell className="font-tabular text-right">{formatTenge(r.opv)}</TableCell>
-                        <TableCell className="font-tabular text-right">{formatTenge(r.vosms)}</TableCell>
-                        <TableCell className="font-tabular text-right">{formatTenge(r.ipn)}</TableCell>
-                        <TableCell className="font-tabular text-right">{formatTenge(totalWithheld)}</TableCell>
-                        <TableCell className="font-tabular text-right font-medium">
-                          {formatTenge(r.netIncome)}
-                        </TableCell>
-                        <TableCell className="border-l border-border font-tabular text-right">
-                          {formatTenge(r.standardDeduction)}
-                        </TableCell>
-                        <TableCell className="font-tabular text-right">{formatTenge(r.vosms)}</TableCell>
-                        <TableCell className="font-tabular text-right">{formatTenge(r.opv)}</TableCell>
-                        <TableCell className="font-tabular text-right">{formatTenge(totalDeductions)}</TableCell>
-                        <TableCell className="border-l border-border font-tabular text-right">
-                          {formatTenge(r.so)}
-                        </TableCell>
-                        <TableCell className="font-tabular text-right">{formatTenge(r.oosms)}</TableCell>
-                        <TableCell className="font-tabular text-right">{formatTenge(r.opvr)}</TableCell>
-                        <TableCell className="font-tabular text-right">{formatTenge(r.snGross)}</TableCell>
-                        <TableCell className="font-tabular text-right font-medium">
-                          {formatTenge(totalEmployerGross)}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-text-muted hover:text-danger"
-                            onClick={() => removeEmployee(employee.id)}
-                            disabled={employees.length === 1}
-                            aria-label="Удалить сотрудника"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  )}
+                  {employees.map((employee) => (
+                    <TableRow key={employee.id}>
+                      <TableCell>
+                        <Input
+                          value={employee.name}
+                          onChange={(e) => updateEmployee(employee.id, { name: e.target.value })}
+                          placeholder="Имя сотрудника"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={employee.position}
+                          onChange={(e) => updateEmployee(employee.id, { position: e.target.value })}
+                          placeholder="Должность"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="font-tabular"
+                          value={employee.grossSalary || ""}
+                          onChange={(e) =>
+                            updateEmployee(employee.id, {
+                              grossSalary: Math.max(0, Number(e.target.value) || 0),
+                            })
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="font-tabular"
+                          value={employee.daysWorked || ""}
+                          onChange={(e) =>
+                            updateEmployee(employee.id, {
+                              daysWorked: Math.max(0, Number(e.target.value) || 0),
+                            })
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={employee.benefitCategory}
+                          onValueChange={(v) =>
+                            updateEmployee(employee.id, { benefitCategory: v as BenefitCategory })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PAYROLL_BENEFIT_CATEGORIES.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-text-muted hover:text-danger"
+                          onClick={() => removeEmployee(employee.id)}
+                          disabled={employees.length === 1}
+                          aria-label="Удалить сотрудника"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
-                <TableFooter>
-                  <TableRow>
-                    <TableCell colSpan={6} className="font-semibold">
-                      Итого
-                    </TableCell>
-                    <TableCell className="border-l border-border font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.accrued)}
-                    </TableCell>
-                    <TableCell className="font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.opv)}
-                    </TableCell>
-                    <TableCell className="font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.vosms)}
-                    </TableCell>
-                    <TableCell className="font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.ipn)}
-                    </TableCell>
-                    <TableCell className="font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.totalWithheld)}
-                    </TableCell>
-                    <TableCell className="font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.netIncome)}
-                    </TableCell>
-                    <TableCell className="border-l border-border font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.standardDeduction)}
-                    </TableCell>
-                    <TableCell className="font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.vosms)}
-                    </TableCell>
-                    <TableCell className="font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.opv)}
-                    </TableCell>
-                    <TableCell className="font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.totalDeductions)}
-                    </TableCell>
-                    <TableCell className="border-l border-border font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.so)}
-                    </TableCell>
-                    <TableCell className="font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.oosms)}
-                    </TableCell>
-                    <TableCell className="font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.opvr)}
-                    </TableCell>
-                    <TableCell className="font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.snGross)}
-                    </TableCell>
-                    <TableCell className="font-tabular text-right font-semibold">
-                      {formatTenge(multipleTotals.totalEmployerGross)}
-                    </TableCell>
-                    <TableCell />
-                  </TableRow>
-                </TableFooter>
               </Table>
 
               <div className="mt-5 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
