@@ -285,59 +285,89 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
             type: "fot",
             title: "Зарплата / ФОТ — несколько сотрудников",
             date: new Date().toISOString().slice(0, 10),
+            orientation: "landscape",
             inputs: [
               { label: "Режим работодателя", value: mode === "too_our" ? "ТОО на ОУР" : "ИП" },
               { label: "Рабочих дней в периоде (норма)", value: String(workingDaysNorm) },
               { label: "Число сотрудников", value: String(employees.length) },
             ],
-            rows: [
-              ...employeeResults.flatMap(
-                ({ employee, proratedSalary, result: r, totalWithheld, totalDeductions, totalEmployerGross }, index) => [
-                  {
-                    label: `${index + 1}. ${employee.name || "Сотрудник"}${employee.position ? ` — ${employee.position}` : ""}`,
-                    value: "",
-                    bold: true,
-                  },
-                  { label: "Оклад (тариф)", value: formatTenge(employee.grossSalary) },
-                  {
-                    label: "Отработано",
-                    value: `${employee.daysWorked} дн. (норма ${workingDaysNorm}), ${employee.hoursWorked} ч.`,
-                  },
-                  { label: "Всего начислено", value: formatTenge(proratedSalary) },
-                  { label: "ОПВ", value: formatTenge(r.opv) },
-                  { label: "Взносы ОСМС (ВОСМС)", value: formatTenge(r.vosms) },
-                  { label: `ИПН (${formatPercent(r.ipnRate)})`, value: formatTenge(r.ipn) },
-                  { label: "Всего удержано", value: formatTenge(totalWithheld) },
-                  { label: "Выплачено (на руки)", value: formatTenge(r.netIncome), bold: true },
-                  { label: "Базовый вычет", value: formatTenge(r.standardDeduction) },
-                  { label: "Вычет ВОСМС", value: formatTenge(r.vosms) },
-                  { label: "Вычет ОПВ", value: formatTenge(r.opv) },
-                  { label: "Налоговые вычеты — итого", value: formatTenge(totalDeductions) },
-                  { label: "СО", value: formatTenge(r.so) },
-                  { label: "Отчисления ОСМС (ООСМС)", value: formatTenge(r.oosms) },
-                  { label: "ОПВР", value: formatTenge(r.opvr) },
-                  { label: "Социальный налог (СН)", value: formatTenge(r.snGross) },
-                  { label: "Всего отчислений (работодатель)", value: formatTenge(totalEmployerGross), bold: true },
-                ]
-              ),
-              { label: "ИТОГО ПО ВСЕМ СОТРУДНИКАМ", value: "", bold: true },
-              { label: "Всего начислено", value: formatTenge(multipleTotals.accrued) },
-              { label: "Итого ОПВ", value: formatTenge(multipleTotals.opv) },
-              { label: "Итого взносы ОСМС (ВОСМС)", value: formatTenge(multipleTotals.vosms) },
-              { label: "Итого ИПН", value: formatTenge(multipleTotals.ipn) },
-              { label: "Всего удержано", value: formatTenge(multipleTotals.totalWithheld) },
-              { label: "Итого выплачено (на руки)", value: formatTenge(multipleTotals.netIncome), bold: true },
-              { label: "Налоговые вычеты — итого", value: formatTenge(multipleTotals.totalDeductions) },
-              { label: "Итого СО", value: formatTenge(multipleTotals.so) },
-              { label: "Итого отчисления ОСМС (ООСМС)", value: formatTenge(multipleTotals.oosms) },
-              { label: "Итого ОПВР", value: formatTenge(multipleTotals.opvr) },
-              { label: "Итого социальный налог (СН)", value: formatTenge(multipleTotals.snGross) },
-              {
-                label: "Всего отчислений (работодатель)",
-                value: formatTenge(multipleTotals.totalEmployerGross),
-                bold: true,
-              },
-            ],
+            rows: [],
+            table: {
+              columns: [
+                { label: "Сотрудник", flex: 2.2 },
+                { label: "Должность", flex: 1.8 },
+                { label: "Оклад (тариф)", flex: 1.3, align: "right" },
+                { label: "Дн.", flex: 0.6, align: "right" },
+                { label: "Ч.", flex: 0.6, align: "right" },
+                { label: "Льгота", flex: 1.4 },
+                { label: "Начислено", flex: 1.3, align: "right" },
+                { label: "ОПВ", flex: 1, align: "right" },
+                { label: "ОСМС", flex: 1, align: "right" },
+                { label: "ИПН", flex: 1, align: "right" },
+                { label: "Удержано", flex: 1.2, align: "right" },
+                { label: "Выплачено", flex: 1.2, align: "right" },
+                { label: "Баз. вычет", flex: 1, align: "right" },
+                { label: "Выч. ВОСМС", flex: 1, align: "right" },
+                { label: "Выч. ОПВ", flex: 1, align: "right" },
+                { label: "Вычеты итого", flex: 1.1, align: "right" },
+                { label: "СО", flex: 1, align: "right" },
+                { label: "ОСМС", flex: 1, align: "right" },
+                { label: "ОПВР", flex: 1, align: "right" },
+                { label: "СН", flex: 1, align: "right" },
+                { label: "Отчисления итого", flex: 1.3, align: "right" },
+              ],
+              rows: [
+                ...employeeResults.map(
+                  ({ employee, proratedSalary, result: r, totalWithheld, totalDeductions, totalEmployerGross }) => [
+                    employee.name || "Сотрудник",
+                    employee.position || "—",
+                    formatTenge(employee.grossSalary),
+                    String(employee.daysWorked),
+                    String(employee.hoursWorked),
+                    PAYROLL_BENEFIT_CATEGORIES.find((c) => c.id === employee.benefitCategory)?.label ?? "—",
+                    formatTenge(proratedSalary),
+                    formatTenge(r.opv),
+                    formatTenge(r.vosms),
+                    formatTenge(r.ipn),
+                    formatTenge(totalWithheld),
+                    formatTenge(r.netIncome),
+                    formatTenge(r.standardDeduction),
+                    formatTenge(r.vosms),
+                    formatTenge(r.opv),
+                    formatTenge(totalDeductions),
+                    formatTenge(r.so),
+                    formatTenge(r.oosms),
+                    formatTenge(r.opvr),
+                    formatTenge(r.snGross),
+                    formatTenge(totalEmployerGross),
+                  ]
+                ),
+                [
+                  "ИТОГО",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  formatTenge(multipleTotals.accrued),
+                  formatTenge(multipleTotals.opv),
+                  formatTenge(multipleTotals.vosms),
+                  formatTenge(multipleTotals.ipn),
+                  formatTenge(multipleTotals.totalWithheld),
+                  formatTenge(multipleTotals.netIncome),
+                  formatTenge(multipleTotals.standardDeduction),
+                  formatTenge(multipleTotals.vosms),
+                  formatTenge(multipleTotals.opv),
+                  formatTenge(multipleTotals.totalDeductions),
+                  formatTenge(multipleTotals.so),
+                  formatTenge(multipleTotals.oosms),
+                  formatTenge(multipleTotals.opvr),
+                  formatTenge(multipleTotals.snGross),
+                  formatTenge(multipleTotals.totalEmployerGross),
+                ],
+              ],
+              boldRowIndexes: [employeeResults.length],
+            },
           }
         : {
             type: "fot",
@@ -559,13 +589,13 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead rowSpan={2} className="align-bottom text-text-muted">
+                    <TableHead rowSpan={2} className="min-w-[200px] align-bottom text-text-muted">
                       Сотрудник
                     </TableHead>
-                    <TableHead rowSpan={2} className="w-36 align-bottom text-text-muted">
+                    <TableHead rowSpan={2} className="min-w-[180px] align-bottom text-text-muted">
                       Должность
                     </TableHead>
-                    <TableHead rowSpan={2} className="w-32 align-bottom text-text-muted">
+                    <TableHead rowSpan={2} className="min-w-[160px] align-bottom text-text-muted">
                       Оклад (тариф)
                     </TableHead>
                     <TableHead rowSpan={2} className="w-24 align-bottom text-text-muted">
@@ -574,7 +604,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                     <TableHead rowSpan={2} className="w-24 align-bottom text-text-muted">
                       Отр. часов
                     </TableHead>
-                    <TableHead rowSpan={2} className="w-36 align-bottom text-text-muted">
+                    <TableHead rowSpan={2} className="w-40 align-bottom text-text-muted">
                       Льгота
                     </TableHead>
                     <TableHead colSpan={6} className="border-l border-border text-center text-text-muted">

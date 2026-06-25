@@ -93,12 +93,39 @@ const styles = StyleSheet.create({
     color: "#555555",
     lineHeight: 1.3,
   },
+  wideTable: {
+    borderTop: BORDER,
+    borderLeft: BORDER,
+    marginBottom: 18,
+  },
+  wideRow: {
+    flexDirection: "row",
+  },
+  wideHeaderRow: {
+    backgroundColor: "#eeeeee",
+  },
+  wideHeaderCell: {
+    borderRight: BORDER,
+    borderBottom: BORDER,
+    padding: 3,
+    fontSize: 7,
+    fontWeight: "bold",
+  },
+  wideCell: {
+    borderRight: BORDER,
+    borderBottom: BORDER,
+    padding: 3,
+    fontSize: 7,
+  },
+  wideRowAlt: {
+    backgroundColor: "#f7f7f7",
+  },
 });
 
 export function ReportDocument({ data }: { data: ReportData }) {
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" orientation={data.orientation ?? "portrait"} style={styles.page}>
         <View style={styles.header}>
           {/* eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image, не HTML img: alt не поддерживается */}
           <Image src={logoBuffer} style={styles.logo} />
@@ -125,18 +152,73 @@ export function ReportDocument({ data }: { data: ReportData }) {
         ) : null}
 
         <Text style={styles.sectionLabel}>Результат</Text>
-        <View style={styles.table}>
-          {data.rows.map((row, index) => (
-            <View style={styles.row} key={`row-${index}`}>
-              <Text style={row.bold ? [styles.cellLabel, styles.cellValueBold] : styles.cellLabel}>
-                {row.label}
-              </Text>
-              <Text style={row.bold ? [styles.cellValue, styles.cellValueBold] : styles.cellValue}>
-                {row.value}
-              </Text>
+        {data.table ? (
+          <View style={styles.wideTable}>
+            <View style={[styles.wideRow, styles.wideHeaderRow]}>
+              {data.table.columns.map((column, index) => (
+                <Text
+                  key={`col-${index}`}
+                  style={[
+                    styles.wideHeaderCell,
+                    { flex: column.flex ?? 1, textAlign: column.align === "right" ? "right" : "left" },
+                  ]}
+                >
+                  {column.label}
+                </Text>
+              ))}
             </View>
-          ))}
-        </View>
+            {data.table.rows.map((row, rowIndex) => {
+              const isBold = data.table!.boldRowIndexes?.includes(rowIndex) ?? false;
+              return (
+                <View
+                  style={
+                    rowIndex % 2 === 1 ? [styles.wideRow, styles.wideRowAlt] : styles.wideRow
+                  }
+                  key={`table-row-${rowIndex}`}
+                >
+                  {row.map((cell, cellIndex) => (
+                    <Text
+                      key={`cell-${rowIndex}-${cellIndex}`}
+                      style={
+                        isBold
+                          ? [
+                              styles.wideCell,
+                              {
+                                flex: data.table!.columns[cellIndex]?.flex ?? 1,
+                                textAlign: data.table!.columns[cellIndex]?.align === "right" ? "right" : "left",
+                              },
+                              styles.cellValueBold,
+                            ]
+                          : [
+                              styles.wideCell,
+                              {
+                                flex: data.table!.columns[cellIndex]?.flex ?? 1,
+                                textAlign: data.table!.columns[cellIndex]?.align === "right" ? "right" : "left",
+                              },
+                            ]
+                      }
+                    >
+                      {cell}
+                    </Text>
+                  ))}
+                </View>
+              );
+            })}
+          </View>
+        ) : (
+          <View style={styles.table}>
+            {data.rows.map((row, index) => (
+              <View style={styles.row} key={`row-${index}`}>
+                <Text style={row.bold ? [styles.cellLabel, styles.cellValueBold] : styles.cellLabel}>
+                  {row.label}
+                </Text>
+                <Text style={row.bold ? [styles.cellValue, styles.cellValueBold] : styles.cellValue}>
+                  {row.value}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         <Text style={styles.footnote}>
           Калькулятор носит справочный характер. Ставки актуальны на 2026 год. Для официальных

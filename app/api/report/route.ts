@@ -11,13 +11,32 @@ const reportRowSchema = z.object({
   bold: z.boolean().optional(),
 });
 
-const reportDataSchema = z.object({
-  type: z.enum(["fot", "simplified", "vat", "comparison"]),
-  title: z.string().min(1, "Укажите название расчёта"),
-  date: z.string().min(1, "Укажите дату"),
-  inputs: z.array(reportRowSchema),
-  rows: z.array(reportRowSchema).min(1, "Нет данных результата для отчёта"),
+const reportTableColumnSchema = z.object({
+  label: z.string().min(1),
+  flex: z.number().positive().optional(),
+  align: z.enum(["left", "right"]).optional(),
 });
+
+const reportTableSchema = z.object({
+  columns: z.array(reportTableColumnSchema).min(1),
+  rows: z.array(z.array(z.string())),
+  boldRowIndexes: z.array(z.number().int().min(0)).optional(),
+});
+
+const reportDataSchema = z
+  .object({
+    type: z.enum(["fot", "simplified", "vat", "comparison"]),
+    title: z.string().min(1, "Укажите название расчёта"),
+    date: z.string().min(1, "Укажите дату"),
+    inputs: z.array(reportRowSchema),
+    rows: z.array(reportRowSchema),
+    table: reportTableSchema.optional(),
+    orientation: z.enum(["portrait", "landscape"]).optional(),
+  })
+  .refine((data) => data.rows.length > 0 || (data.table?.rows.length ?? 0) > 0, {
+    message: "Нет данных результата для отчёта",
+    path: ["rows"],
+  });
 
 /** renderToBuffer типизирован строго на элемент <Document> — то же ограничение типов, что в /api/invoice */
 function asDocumentElement(data: ReportData): ReactElement<DocumentProps> {
