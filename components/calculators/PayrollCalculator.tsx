@@ -645,8 +645,8 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                     <TableHead className="min-w-[200px] text-text-muted">Сотрудник</TableHead>
                     <TableHead className="min-w-[180px] text-text-muted">Должность</TableHead>
                     <TableHead className="min-w-[160px] text-text-muted">Оклад (тариф)</TableHead>
-                    <TableHead className="w-28 text-text-muted">Отр. дней</TableHead>
-                    <TableHead className="w-28 text-text-muted">Отр. часов</TableHead>
+                    <TableHead className="min-w-[140px] text-text-muted">Отр. дней</TableHead>
+                    <TableHead className="min-w-[140px] text-text-muted">Отр. часов</TableHead>
                     <TableHead className="min-w-[180px] text-text-muted">Льгота</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
