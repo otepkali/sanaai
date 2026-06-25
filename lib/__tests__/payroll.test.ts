@@ -172,6 +172,7 @@ describe("prorateSalaryWithOvertime", () => {
     const r = prorateSalaryWithOvertime({
       grossSalary: 220000,
       normDays: 22,
+      normHours: 176,
       daysWorked: 22,
       hoursWorked: 176,
     });
@@ -184,6 +185,7 @@ describe("prorateSalaryWithOvertime", () => {
     const r = prorateSalaryWithOvertime({
       grossSalary: 220000,
       normDays: 22,
+      normHours: 176,
       daysWorked: 11,
       hoursWorked: 88,
     });
@@ -196,6 +198,7 @@ describe("prorateSalaryWithOvertime", () => {
     const r = prorateSalaryWithOvertime({
       grossSalary: 220000,
       normDays: 22,
+      normHours: 176,
       daysWorked: 24,
       hoursWorked: 176,
     });
@@ -208,16 +211,36 @@ describe("prorateSalaryWithOvertime", () => {
     const r = prorateSalaryWithOvertime({
       grossSalary: 220000,
       normDays: 22,
+      normHours: 176,
       daysWorked: 22,
       hoursWorked: 180,
     });
-    // hourlyRate = 220000/(22×8) = 1250; 4 лишних часа × 1250 × 1.5 = 7500
+    // hourlyRate = 220000/176 = 1250; 4 лишних часа × 1250 × 1.5 = 7500
     expect(r.overtimeHoursPay).toBe(7500);
     expect(r.accrued).toBe(227500);
   });
 
+  it("неровная норма часов шестидневки (часы не делятся на дни нацело)", () => {
+    // Июнь, шестидневка: 26 дней, 174 часа (174/26 ≈ 6,69 ч/день — не целое число)
+    const r = prorateSalaryWithOvertime({
+      grossSalary: 260000,
+      normDays: 26,
+      normHours: 174,
+      daysWorked: 26,
+      hoursWorked: 174,
+    });
+    expect(r.accrued).toBe(260000);
+    expect(r.overtimeHoursPay).toBe(0);
+  });
+
   it("норма дней = 0 — возвращает оклад без деления на ноль", () => {
-    const r = prorateSalaryWithOvertime({ grossSalary: 220000, normDays: 0, daysWorked: 0, hoursWorked: 0 });
+    const r = prorateSalaryWithOvertime({
+      grossSalary: 220000,
+      normDays: 0,
+      normHours: 0,
+      daysWorked: 0,
+      hoursWorked: 0,
+    });
     expect(r.accrued).toBe(220000);
   });
 });

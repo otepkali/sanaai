@@ -157,8 +157,14 @@ export const OVERTIME_RATE_MULTIPLIER = 1.5;
 export interface ProrateWithOvertimeInput {
   /** Оклад (тариф) за полный месяц, тенге */
   grossSalary: number;
-  /** Норма рабочих дней в месяце (40-час. неделя, пятидневка) */
+  /** Норма рабочих дней в месяце по балансу рабочего времени */
   normDays: number;
+  /**
+   * Норма рабочих часов в месяце. Указывается явно, а не выводится как
+   * normDays × 8 — у шестидневки часы не делятся ровно на дни (короче
+   * рабочий день перед выходным).
+   */
+  normHours: number;
   /** Фактически отработано дней */
   daysWorked: number;
   /** Фактически отработано часов */
@@ -183,15 +189,14 @@ export interface ProrateWithOvertimeResult {
  * как при сверхурочной работе (ст. 88 Трудового кодекса РК).
  */
 export function prorateSalaryWithOvertime(input: ProrateWithOvertimeInput): ProrateWithOvertimeResult {
-  const { grossSalary, normDays, daysWorked, hoursWorked } = input;
+  const { grossSalary, normDays, normHours, daysWorked, hoursWorked } = input;
 
-  if (normDays <= 0) {
+  if (normDays <= 0 || normHours <= 0) {
     return { accrued: Math.round(grossSalary), overtimeDaysPay: 0, overtimeHoursPay: 0, dailyRate: 0, hourlyRate: 0 };
   }
 
   const dailyRate = grossSalary / normDays;
-  const hourlyRate = grossSalary / (normDays * HOURS_PER_DAY_NORM);
-  const normHours = normDays * HOURS_PER_DAY_NORM;
+  const hourlyRate = grossSalary / normHours;
 
   let baseAccrued: number;
   let overtimeDaysPay = 0;

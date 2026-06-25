@@ -25,17 +25,16 @@ import {
 } from "@/components/ui/table";
 import { MoneyInput } from "@/components/calculators/MoneyInput";
 import { ResultBreakdown, type BreakdownRow } from "@/components/ResultBreakdown";
-import {
-  calculateGph,
-  calculatePayroll,
-  prorateSalaryWithOvertime,
-  HOURS_PER_DAY_NORM,
-  type PayrollMode,
-} from "@/lib/payroll";
+import { calculateGph, calculatePayroll, prorateSalaryWithOvertime, type PayrollMode } from "@/lib/payroll";
 import { payrollFormSchema } from "@/lib/schemas";
 import { formatPercent, formatTenge } from "@/lib/format";
 import { PAYROLL_BENEFIT_CATEGORIES, type BenefitCategory } from "@/lib/tax-config-2026";
-import { WORKING_DAYS_2026, getWorkingDaysNorm } from "@/lib/working-calendar-2026";
+import {
+  WORKING_CALENDAR_2026,
+  WORK_SCHEDULES,
+  getWorkingNorm,
+  type WorkSchedule,
+} from "@/lib/working-calendar-2026";
 import { useAutosaveCalculation } from "@/lib/hooks/useAutosaveCalculation";
 import type { CalculationRow } from "@/lib/supabase/calculations";
 import { DownloadPdfButton } from "@/components/DownloadPdfButton";
@@ -56,13 +55,13 @@ interface EditableEmployee {
 }
 
 let nextEmployeeId = 1;
-const createEmployee = (workingDaysNorm: number): EditableEmployee => ({
+const createEmployee = (norm: { days: number; hours: number }): EditableEmployee => ({
   id: nextEmployeeId++,
   name: "",
   position: "",
   grossSalary: 300000,
-  daysWorked: workingDaysNorm,
-  hoursWorked: workingDaysNorm * HOURS_PER_DAY_NORM,
+  daysWorked: norm.days,
+  hoursWorked: norm.hours,
   benefitCategory: "none",
 });
 
@@ -81,6 +80,7 @@ interface MultipleInput {
   applyStandardDeduction: boolean;
   bornBeforeJan1975: boolean;
   selectedMonth: number;
+  schedule: WorkSchedule;
   employees: Array<{
     name: string;
     position: string;
@@ -137,11 +137,14 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
   const [selectedMonth, setSelectedMonth] = useState(
     initialInput?.subMode === "multiple" ? initialInput.selectedMonth : CURRENT_MONTH
   );
-  const workingDaysNorm = getWorkingDaysNorm(selectedMonth);
+  const [schedule, setSchedule] = useState<WorkSchedule>(
+    initialInput?.subMode === "multiple" ? initialInput.schedule : "five_day"
+  );
+  const workingNorm = getWorkingNorm(selectedMonth, schedule);
   const [employees, setEmployees] = useState<EditableEmployee[]>(() =>
     initialInput?.subMode === "multiple" && initialInput.employees.length > 0
-      ? initialInput.employees.map((e) => ({ ...createEmployee(workingDaysNorm), ...e }))
-      : [createEmployee(workingDaysNorm)]
+      ? initialInput.employees.map((e) => ({ ...createEmployee(workingNorm), ...e }))
+      : [createEmployee(workingNorm)]
   );
 
   // ГПХ
@@ -170,7 +173,8 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
   const employeeResults = employees.map((employee) => {
     const overtime = prorateSalaryWithOvertime({
       grossSalary: employee.grossSalary,
-      normDays: workingDaysNorm,
+      normDays: workingNorm.days,
+      normHours: workingNorm.hours,
       daysWorked: employee.daysWorked,
       hoursWorked: employee.hoursWorked,
     });
@@ -242,17 +246,20 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
     setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
   }
   function addEmployee() {
-    setEmployees((prev) => [...prev, createEmployee(workingDaysNorm)]);
+    setEmployees((prev) => [...prev, createEmployee(workingNorm)]);
   }
   function removeEmployee(id: number) {
     setEmployees((prev) => (prev.length > 1 ? prev.filter((e) => e.id !== id) : prev));
   }
   function handleMonthChange(month: number) {
     setSelectedMonth(month);
-    const newNorm = getWorkingDaysNorm(month);
-    setEmployees((prev) =>
-      prev.map((e) => ({ ...e, daysWorked: newNorm, hoursWorked: newNorm * HOURS_PER_DAY_NORM }))
-    );
+    const newNorm = getWorkingNorm(month, schedule);
+    setEmployees((prev) => prev.map((e) => ({ ...e, daysWorked: newNorm.days, hoursWorked: newNorm.hours })));
+  }
+  function handleScheduleChange(newSchedule: WorkSchedule) {
+    setSchedule(newSchedule);
+    const newNorm = getWorkingNorm(selectedMonth, newSchedule);
+    setEmployees((prev) => prev.map((e) => ({ ...e, daysWorked: newNorm.days, hoursWorked: newNorm.hours })));
   }
 
   const savedInput: PayrollSavedInput =
@@ -265,6 +272,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
             applyStandardDeduction,
             bornBeforeJan1975,
             selectedMonth,
+            schedule,
             employees: employees.map(
               ({ name, position, grossSalary: gs, daysWorked, hoursWorked, benefitCategory: bc }) => ({
                 name,
@@ -318,9 +326,16 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
               { label: "Режим работодателя", value: mode === "too_our" ? "ТОО на ОУР" : "ИП" },
               {
                 label: "Месяц",
-                value: WORKING_DAYS_2026.find((m) => m.value === selectedMonth)?.label ?? String(selectedMonth),
+                value: WORKING_CALENDAR_2026.find((m) => m.value === selectedMonth)?.label ?? String(selectedMonth),
               },
-              { label: "Норма рабочих дней (40-час., пятидневка)", value: String(workingDaysNorm) },
+              {
+                label: "График работы",
+                value: WORK_SCHEDULES.find((s) => s.value === schedule)?.label ?? schedule,
+              },
+              {
+                label: "Норма (40-час. неделя)",
+                value: `${workingNorm.days} дн. / ${workingNorm.hours} ч.`,
+              },
               { label: "Число сотрудников", value: String(employees.length) },
             ],
             rows: [],
@@ -609,16 +624,31 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {WORKING_DAYS_2026.map((m) => (
+                    {WORKING_CALENDAR_2026.map((m) => (
                       <SelectItem key={m.value} value={String(m.value)}>
                         {m.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-text-muted">График работы</Label>
+                <Select value={schedule} onValueChange={(v) => handleScheduleChange(v as WorkSchedule)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WORK_SCHEDULES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-text-muted">
-                  Норма — {workingDaysNorm} раб. дней (40-час. неделя, пятидневка), {workingDaysNorm * HOURS_PER_DAY_NORM} ч.
-                  При смене месяца дни/часы у всех сотрудников подставляются автоматически. Дни и часы
+                  Норма — {workingNorm.days} раб. дней, {workingNorm.hours} ч. (40-час. неделя). При смене
+                  месяца или графика дни/часы у всех сотрудников подставляются автоматически. Дни и часы
                   сверх нормы оплачиваются по ставке ×1,5
                 </p>
               </div>
