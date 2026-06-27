@@ -114,6 +114,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   headerGroupLabel: {
+    borderRight: BORDER,
     borderBottom: BORDER,
     padding: 3,
     fontSize: 9,
@@ -281,7 +282,7 @@ export function AvrDocument({
               <View style={styles.headerGroupRow}>
                 <Text style={[styles.headerCell, styles.colQty]}>количество</Text>
                 <Text style={[styles.headerCell, styles.colPrice]}>цена за единицу</Text>
-                <Text style={[styles.headerCell, styles.colSum, { borderRight: "none" }]}>стоимость</Text>
+                <Text style={[styles.headerCell, styles.colSum]}>стоимость</Text>
               </View>
             </View>
           </View>
@@ -293,7 +294,7 @@ export function AvrDocument({
             <Text style={[styles.headerCell, styles.colUnit]}>5</Text>
             <Text style={[styles.headerCell, styles.colQty]}>6</Text>
             <Text style={[styles.headerCell, styles.colPrice]}>7</Text>
-            <Text style={[styles.headerCell, styles.colSum, { borderRight: "none" }]}>8</Text>
+            <Text style={[styles.headerCell, styles.colSum]}>8</Text>
           </View>
           {data.items.map((item, index) => (
             <View style={styles.row} key={index}>
@@ -304,7 +305,7 @@ export function AvrDocument({
               <Text style={[styles.cell, styles.colUnit]}>{item.unit || "—"}</Text>
               <Text style={[styles.cell, styles.colQty]}>{formatNumber(item.quantity)}</Text>
               <Text style={[styles.cell, styles.colPrice]}>{formatNumber(item.price)}</Text>
-              <Text style={[styles.cell, styles.colSum, { borderRight: "none" }]}>
+              <Text style={[styles.cell, styles.colSum]}>
                 {formatNumber(item.quantity * item.price)}
               </Text>
             </View>
@@ -317,7 +318,7 @@ export function AvrDocument({
             <Text style={[styles.cell, styles.colUnit]} />
             <Text style={[styles.cell, styles.colQty]} />
             <Text style={[styles.cell, styles.colPrice]} />
-            <Text style={[styles.cell, styles.colSum, { borderRight: "none", fontWeight: "bold" }]}>
+            <Text style={[styles.cell, styles.colSum, { fontWeight: "bold" }]}>
               {formatNumber(total)}
             </Text>
           </View>
