@@ -98,6 +98,32 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
+  headerCellMerged: {
+    flexDirection: "column",
+    justifyContent: "center",
+    borderRight: BORDER,
+    borderBottom: BORDER,
+    padding: 3,
+  },
+  headerCellMergedText: {
+    fontSize: 9,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  headerGroupWrap: {
+    flexDirection: "column",
+  },
+  headerGroupLabel: {
+    borderBottom: BORDER,
+    padding: 3,
+    fontSize: 9,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  headerGroupRow: {
+    flexDirection: "row",
+    flex: 1,
+  },
   cell: {
     borderRight: BORDER,
     borderBottom: BORDER,
@@ -112,6 +138,7 @@ const styles = StyleSheet.create({
   colQty: { flex: 0.9, textAlign: "right" },
   colPrice: { flex: 1.1, textAlign: "right" },
   colSum: { flex: 1.2, textAlign: "right" },
+  colDone: { flex: 3.2 },
   belowTable: {
     marginTop: 10,
   },
@@ -228,17 +255,35 @@ export function AvrDocument({
 
         <View style={styles.table}>
           <View style={styles.row}>
-            <Text style={[styles.headerCell, styles.colNum]}>Номер по порядку</Text>
-            <Text style={[styles.headerCell, styles.colName]}>Наименование работ (услуг)</Text>
-            <Text style={[styles.headerCell, styles.colDate]}>Дата выполнения работ (оказания услуг)</Text>
-            <Text style={[styles.headerCell, styles.colReport]}>
-              Сведения об отчёте о научных исследованиях, маркетинговых, консультационных и прочих
-              услугах
-            </Text>
-            <Text style={[styles.headerCell, styles.colUnit]}>Единица измерения</Text>
-            <Text style={[styles.headerCell, styles.colQty]}>Количество</Text>
-            <Text style={[styles.headerCell, styles.colPrice]}>Цена за единицу</Text>
-            <Text style={[styles.headerCell, styles.colSum, { borderRight: "none" }]}>Стоимость</Text>
+            <View style={[styles.headerCellMerged, styles.colNum]}>
+              <Text style={styles.headerCellMergedText}>Номер по порядку</Text>
+            </View>
+            <View style={[styles.headerCellMerged, styles.colName]}>
+              <Text style={styles.headerCellMergedText}>
+                Наименование работ (услуг) (в разрезе их подвидов в соответствии с технической
+                спецификацией, заданием, графиком выполнения работ (услуг) при их наличии)
+              </Text>
+            </View>
+            <View style={[styles.headerCellMerged, styles.colDate]}>
+              <Text style={styles.headerCellMergedText}>Дата выполнения работ (оказания услуг)**</Text>
+            </View>
+            <View style={[styles.headerCellMerged, styles.colReport]}>
+              <Text style={styles.headerCellMergedText}>
+                Сведения об отчёте о научных исследованиях, маркетинговых, консультационных и прочих
+                услугах (дата, номер, количество страниц) (при их наличии)***
+              </Text>
+            </View>
+            <View style={[styles.headerCellMerged, styles.colUnit]}>
+              <Text style={styles.headerCellMergedText}>Единица измерения</Text>
+            </View>
+            <View style={[styles.headerGroupWrap, styles.colDone]}>
+              <Text style={styles.headerGroupLabel}>Выполнено работ (оказано услуг)</Text>
+              <View style={styles.headerGroupRow}>
+                <Text style={[styles.headerCell, styles.colQty]}>количество</Text>
+                <Text style={[styles.headerCell, styles.colPrice]}>цена за единицу</Text>
+                <Text style={[styles.headerCell, styles.colSum, { borderRight: "none" }]}>стоимость</Text>
+              </View>
+            </View>
           </View>
           <View style={styles.row}>
             <Text style={[styles.headerCell, styles.colNum]}>1</Text>

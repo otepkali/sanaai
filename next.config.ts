@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/invoice": ["./public/fonts/**/*"],
     "/api/report": ["./public/fonts/**/*", "./public/logo.png"],
+    "/api/documents/generate": ["./public/fonts/**/*"],
     // pdfjs-dist подгружает pdf.worker.mjs и шрифты/cmaps по путям относительно
     // собственного node_modules — автотрассировка Vercel может их не найти.
     // @napi-rs/canvas подгружается pdfjs-dist через require() внутри try/catch —
