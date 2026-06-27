@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
     "/api/invoice": ["./public/fonts/**/*"],
     "/api/report": ["./public/fonts/**/*", "./public/logo.png"],
     "/api/documents/generate": ["./public/fonts/**/*"],
+    // Puppeteer рендерит АВР через реальный Chromium — нужны и шрифты (встраиваются
+    // как base64 в HTML), и весь бинарник @sparticuz/chromium (brotli-архивы в bin/),
+    // который автотрассировка Vercel иначе не подхватывает.
+    "/api/documents/avr-pdf": ["./public/fonts/**/*", "./node_modules/@sparticuz/chromium/**/*"],
     // pdfjs-dist подгружает pdf.worker.mjs и шрифты/cmaps по путям относительно
     // собственного node_modules — автотрассировка Vercel может их не найти.
     // @napi-rs/canvas подгружается pdfjs-dist через require() внутри try/catch —
@@ -28,7 +32,7 @@ const nextConfig: NextConfig = {
   // Next.js резолвить пакет через нативный require Node вместо бандлинга.
   // @napi-rs/canvas — нативный N-API бинарник, который pdfjs-dist подхватывает
   // сам для полифилла DOMMatrix (без него в Node бросает ReferenceError).
-  serverExternalPackages: ["pdf-parse", "pdfjs-dist", "@napi-rs/canvas"],
+  serverExternalPackages: ["pdf-parse", "pdfjs-dist", "@napi-rs/canvas", "@sparticuz/chromium", "puppeteer-core"],
 };
 
 export default nextConfig;

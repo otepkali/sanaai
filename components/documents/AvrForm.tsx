@@ -99,10 +99,10 @@ export function AvrForm() {
     setMessage(null);
     setIsDownloading(true);
     try {
-      const response = await fetch("/api/documents/generate", {
+      const response = await fetch("/api/documents/avr-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "avr", data: buildData() }),
+        body: JSON.stringify(buildData()),
       });
       if (!response.ok) {
         const errorBody: { error?: unknown } | null = await response.json().catch(() => null);
