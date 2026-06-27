@@ -7,7 +7,6 @@ import { PayrollCalculator } from "@/components/calculators/PayrollCalculator";
 import { SimplifiedCalculator } from "@/components/calculators/SimplifiedCalculator";
 import { VatCalculator } from "@/components/calculators/VatCalculator";
 import { CompareCalculator } from "@/components/calculators/CompareCalculator";
-import { InvoiceForm } from "@/components/InvoiceForm";
 import type { CalculationRow, CalculationType } from "@/lib/supabase/calculations";
 
 const TAB_TRIGGER_CLASS =
@@ -62,9 +61,6 @@ export function Dashboard() {
             <TabsTrigger value="compare" className={TAB_TRIGGER_CLASS}>
               Сравнение режимов
             </TabsTrigger>
-            <TabsTrigger value="invoice" className={TAB_TRIGGER_CLASS}>
-              Счёт на оплату
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="payroll" className="mt-6">
@@ -94,9 +90,6 @@ export function Dashboard() {
               initialData={compareRow}
               onSaved={bumpRefresh}
             />
-          </TabsContent>
-          <TabsContent value="invoice" className="mt-6">
-            <InvoiceForm />
           </TabsContent>
         </Tabs>
       </main>

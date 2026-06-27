@@ -26,6 +26,12 @@ export function AppHeader({ userEmail, children }: { userEmail: string; children
             >
               Учёт и ведомости
             </Link>
+            <Link
+              href="/documents"
+              className="rounded-md px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-tint hover:text-text"
+            >
+              Документы
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-3">

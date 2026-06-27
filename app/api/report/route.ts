@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { ReportDocument } from "@/lib/reports/ReportDocument";
+import { ensureFontWarmedUp } from "@/lib/pdf-fonts";
 import type { ReportData } from "@/lib/reports/types";
 
 const reportRowSchema = z.object({
@@ -68,6 +69,7 @@ export async function POST(request: Request) {
 
   let buffer: Buffer;
   try {
+    await ensureFontWarmedUp();
     buffer = await renderToBuffer(asDocumentElement(data));
   } catch (error) {
     console.error("Не удалось сформировать PDF отчёта", error);

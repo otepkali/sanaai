@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { InvoiceDocument } from "@/lib/invoice/InvoiceDocument";
+import { ensureFontWarmedUp } from "@/lib/pdf-fonts";
 import type { InvoiceData } from "@/lib/invoice/types";
 
 /** renderToBuffer типизирован строго на элемент <Document>, хотя на практике принимает
@@ -68,6 +69,7 @@ export async function POST(request: Request) {
 
   let buffer: Buffer;
   try {
+    await ensureFontWarmedUp();
     buffer = await renderToBuffer(asDocumentElement(data));
   } catch (error) {
     console.error("Не удалось сформировать PDF счёта", error);
