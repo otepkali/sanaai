@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   },
   headerCellMerged: {
     flexDirection: "column",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     borderRight: BORDER,
     borderBottom: BORDER,
     padding: 3,
