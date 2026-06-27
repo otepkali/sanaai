@@ -53,8 +53,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    fontSize: 14,
-    fontWeight: "bold",
+    fontSize: 12,
+    fontWeight: "normal",
     textAlign: "center",
     marginTop: 6,
     marginBottom: 10,
@@ -238,7 +238,7 @@ export function AvrDocument({
         </View>
 
         <View style={styles.titleRow}>
-          <Text style={[styles.title, { flex: 1, textAlign: "left" }]}>
+          <Text style={[styles.title, { flex: 1 }]}>
             АКТ ВЫПОЛНЕННЫХ РАБОТ (ОКАЗАННЫХ УСЛУГ)*
           </Text>
           <View style={styles.docNumberBox}>

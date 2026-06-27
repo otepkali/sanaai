@@ -3,15 +3,17 @@ import { createElement } from "react";
 import { Font, Document, Page, Text, renderToBuffer } from "@react-pdf/renderer";
 
 export const PDF_FONT_FAMILY = "Arimo";
-/** Метрически совместимая открытая замена Times New Roman — для официальных
- *  бланков (АВР и т.п.), где исходная форма набрана именно этим шрифтом. */
-export const PDF_FONT_FAMILY_SERIF = "Tinos";
+/** Для официальных бланков (АВР и т.п.), где исходная форма набрана Times
+ *  New Roman — используется реальный файл шрифта (добавлен по решению
+ *  пользователя, на свою ответственность по лицензии Microsoft); жирное
+ *  начертание берём из Tinos (открытый аналог), так как загружен только
+ *  обычный вес. */
+export const PDF_FONT_FAMILY_SERIF = "TimesNewRoman";
 
 const fontsDir = path.join(process.cwd(), "public", "fonts");
 
 // Arimo — open-лицензионный шрифт, метрически и визуально совместимый с Arial
 // (как у 1С/МоегоСклада), но без ограничений на распространение файлов Arial.
-// Tinos — тот же проект Google, аналог для Times New Roman (Apache 2.0 / OFL).
 // Регистрация в одном модуле — документы импортируют его только за побочный
 // эффект, чтобы не регистрировать шрифты дважды.
 Font.register({
@@ -25,7 +27,7 @@ Font.register({
 Font.register({
   family: PDF_FONT_FAMILY_SERIF,
   fonts: [
-    { src: path.join(fontsDir, "Tinos-Regular.ttf"), fontWeight: "normal" },
+    { src: path.join(fontsDir, "timesnewromanpsmt.ttf"), fontWeight: "normal" },
     { src: path.join(fontsDir, "Tinos-Bold.ttf"), fontWeight: "bold" },
   ],
 });
