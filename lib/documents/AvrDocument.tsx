@@ -15,112 +15,103 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     width: 260,
     textAlign: "right",
+    fontStyle: "italic",
     fontSize: 9,
     marginBottom: 2,
   },
   formCode: {
     alignSelf: "flex-end",
-    fontWeight: "bold",
-    fontSize: 9,
-    marginBottom: 6,
+    marginBottom: 10,
   },
-  binRow: {
+  partyRow: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  binLabel: {
-    fontWeight: "bold",
-    marginRight: 6,
-  },
-  binValue: {
-    border: BORDER,
-    minWidth: 140,
-    padding: 2,
-    fontSize: 10,
-  },
-  partyLine: {
-    flexDirection: "row",
+    alignItems: "flex-start",
     marginBottom: 1,
   },
   partyLabel: {
     fontWeight: "bold",
-    minWidth: 70,
+    width: 70,
   },
   partyValue: {
     flex: 1,
-    borderBottom: BORDER,
-    marginLeft: 4,
-    paddingBottom: 1,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  binBox: {
+    width: 130,
+    alignItems: "center",
+    marginLeft: 10,
+  },
+  binBoxLabel: {
+    fontSize: 9,
+  },
+  binBoxValue: {
+    border: BORDER,
+    width: "100%",
+    textAlign: "center",
+    padding: 3,
+    marginTop: 2,
   },
   caption: {
     fontSize: 8,
+    fontStyle: "italic",
     color: "#444444",
-    marginBottom: 4,
-    marginLeft: 74,
-  },
-  contractLine: {
-    flexDirection: "row",
+    textAlign: "center",
+    marginLeft: 70,
     marginBottom: 8,
   },
-  titleRow: {
+  contractRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginBottom: 6,
-    marginTop: 4,
+    alignItems: "flex-end",
+    marginBottom: 8,
   },
-  titleText: {
-    fontSize: 11,
+  contractLabel: {
     fontWeight: "bold",
-    flex: 1,
-    textAlign: "center",
-    paddingTop: 4,
   },
-  docNumberBox: {
+  contractLine: {
+    flex: 1,
+    borderBottom: BORDER,
+    marginLeft: 6,
+    marginRight: 10,
+  },
+  docInfoBox: {
     flexDirection: "row",
     borderTop: BORDER,
     borderLeft: BORDER,
-    marginLeft: 10,
   },
-  docNumberCell: {
-    width: 80,
+  docInfoCell: {
+    width: 78,
     borderRight: BORDER,
-    borderBottom: BORDER,
   },
-  docNumberHeader: {
+  docInfoCellWide: {
+    width: 110,
+    borderRight: BORDER,
+  },
+  docInfoHeader: {
     fontSize: 8,
     padding: 2,
     borderBottom: BORDER,
     textAlign: "center",
   },
-  docNumberValue: {
+  docInfoValue: {
     padding: 4,
     minHeight: 14,
     textAlign: "center",
-    fontSize: 10,
-  },
-  reservesBlock: {
-    marginBottom: 4,
-  },
-  reservesLine: {
-    flexDirection: "row",
-    marginBottom: 1,
-  },
-  reservesValue: {
-    flex: 1,
-    borderBottom: BORDER,
-    marginLeft: 4,
-  },
-  reservesCaption: {
-    fontSize: 8,
-    color: "#444444",
-    textAlign: "center",
-    marginBottom: 4,
-  },
-  attachmentText: {
     fontSize: 9,
-    marginBottom: 8,
+  },
+  periodSplit: {
+    flexDirection: "row",
+  },
+  periodCell: {
+    flex: 1,
+    borderRight: BORDER,
+  },
+  title: {
+    fontSize: 12,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginTop: 4,
+    marginBottom: 10,
   },
   table: {
     borderTop: BORDER,
@@ -140,7 +131,7 @@ const styles = StyleSheet.create({
   },
   headerCellMerged: {
     flexDirection: "column",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     borderRight: BORDER,
     borderBottom: BORDER,
     padding: 2,
@@ -168,71 +159,56 @@ const styles = StyleSheet.create({
   cell: {
     borderRight: BORDER,
     borderBottom: BORDER,
-    padding: 2,
+    padding: 3,
     fontSize: 9,
   },
-  colNum:    { flex: 0.4, textAlign: "center" },
-  colName:   { flex: 3 },
-  colDate:   { flex: 1, textAlign: "center" },
-  colReport: { flex: 1.6 },
-  colUnit:   { flex: 0.8, textAlign: "center" },
-  colQty:    { flex: 0.8, textAlign: "right" },
-  colPrice:  { flex: 1, textAlign: "right" },
-  colSum:    { flex: 1, textAlign: "right" },
-  colDone:   { flex: 2.8 },
-  page2: {
-    padding: "14mm 16mm",
-    fontFamily: PDF_FONT_FAMILY_SERIF,
-    fontSize: 10,
-    color: "#000000",
+  colNum: { flex: 0.5, textAlign: "center" },
+  colName: { flex: 3 },
+  colReport: { flex: 2.2 },
+  colUnit: { flex: 0.9, textAlign: "center" },
+  colQty: { flex: 0.8, textAlign: "right" },
+  colPrice: { flex: 1.1, textAlign: "right" },
+  colSum: { flex: 1.3, textAlign: "right" },
+  colDone: { flex: 3.2 },
+  belowTable: {
+    marginTop: 8,
   },
-  page2Header: {
-    alignSelf: "flex-end",
-    fontSize: 10,
-    marginBottom: 20,
-  },
-  signaturesTable: {
+  belowTableLine: {
     flexDirection: "row",
-    borderTop: BORDER,
-    borderLeft: BORDER,
-    marginBottom: 0,
-  },
-  sigCell: {
-    flex: 1,
-    borderRight: BORDER,
-    borderBottom: BORDER,
-    padding: 8,
-    minHeight: 80,
-  },
-  sigLine: {
-    fontSize: 10,
     marginBottom: 4,
   },
-  sigCaption: {
-    fontSize: 8,
-    color: "#444444",
-  },
-  stampTableRow: {
-    flexDirection: "row",
-    borderLeft: BORDER,
-  },
-  stampCell: {
+  belowTableValue: {
     flex: 1,
-    borderRight: BORDER,
     borderBottom: BORDER,
-    padding: 8,
-    minHeight: 60,
+    marginLeft: 4,
+  },
+  sigBlock: {
+    flexDirection: "row",
+    marginTop: 24,
+    gap: 20,
+  },
+  sigHalf: {
+    flex: 1,
+  },
+  sigRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+  },
+  sigCaptionRow: {
+    flexDirection: "row",
+  },
+  sigCaption: {
+    flex: 1,
+    fontSize: 8,
+    fontStyle: "italic",
+    color: "#444444",
+    textAlign: "center",
   },
   stampRow: {
     position: "relative",
     flexDirection: "row",
     alignItems: "center",
-  },
-  footnote: {
-    marginTop: 10,
-    fontSize: 8,
-    color: "#444444",
-    lineHeight: 1.4,
+    marginTop: 18,
   },
 });
 
@@ -251,127 +227,107 @@ export function AvrDocument({
   signature: Buffer | null;
   stamp: Buffer | null;
 }) {
-  const total = data.items.reduce((sum, item) => sum + item.quantity * item.price, 0);
-  const executorLine = [
-    requisites.companyName,
-    requisites.binIin ? `БИН/ИИН ${requisites.binIin}` : null,
-    requisites.address,
-  ]
-    .filter(Boolean)
-    .join(", ");
+  const executorLine = [requisites.companyName, requisites.address].filter(Boolean).join(", ");
 
   return (
     <Document>
-      {/* СТРАНИЦА 1 */}
-      <Page size="A4" style={styles.page}>
-
+      <Page size="A4" orientation="landscape" style={styles.page}>
         <Text style={styles.headerBlock}>
           {"Приложение 50\nк приказу Министра финансов\nРеспублики Казахстан\nот 20 декабря 2012 года № 562"}
         </Text>
-        <Text style={styles.formCode}>форма Р-1</Text>
+        <Text style={styles.formCode}>Форма Р-1</Text>
 
-        <View style={styles.binRow}>
-          <Text style={styles.binLabel}>ИИН/БИН</Text>
-          <Text style={styles.binValue}>{requisites.binIin || ""}</Text>
-        </View>
-
-        <View style={styles.partyLine}>
+        <View style={styles.partyRow}>
           <Text style={styles.partyLabel}>Заказчик</Text>
           <Text style={styles.partyValue}>{data.customerName || ""}</Text>
+          <View style={styles.binBox}>
+            <Text style={styles.binBoxLabel}>ИИН/БИН</Text>
+            <Text style={styles.binBoxValue}>{data.customerBinIin || ""}</Text>
+          </View>
         </View>
         <Text style={styles.caption}>полное наименование, адрес, данные о средствах связи</Text>
 
-        <View style={styles.partyLine}>
+        <View style={styles.partyRow}>
           <Text style={styles.partyLabel}>Исполнитель</Text>
           <Text style={styles.partyValue}>{data.executorName || executorLine}</Text>
+          <View style={styles.binBox}>
+            <Text style={styles.binBoxLabel}>ИИН/БИН</Text>
+            <Text style={styles.binBoxValue}>{requisites.binIin || ""}</Text>
+          </View>
         </View>
         <Text style={styles.caption}>полное наименование, адрес, данные о средствах связи</Text>
 
-        <View style={styles.contractLine}>
-          <Text>{"Договор (контракт)___ №___ «___» "}</Text>
-          <Text>{data.contractDate || "________"}</Text>
-          <Text>{" 20__ г."}</Text>
-        </View>
-
-        {/* Заголовок + Номер/Дата в одну строку */}
-        <View style={styles.titleRow}>
-          <Text style={styles.titleText}>
-            АКТ ВЫПОЛНЕННЫХ РАБОТ (ОКАЗАННЫХ УСЛУГ)*
+        <View style={styles.contractRow}>
+          <Text style={styles.contractLabel}>Договор (контракт)</Text>
+          <Text style={styles.contractLine}>
+            {data.contractNumber ? ` № ${data.contractNumber} от ${data.contractDate || ""}` : ""}
           </Text>
-          <View style={styles.docNumberBox}>
-            <View style={styles.docNumberCell}>
-              <Text style={styles.docNumberHeader}>{"Номер\nдокумента"}</Text>
-              <Text style={styles.docNumberValue}>{data.documentNumber || ""}</Text>
+          <View style={styles.docInfoBox}>
+            <View style={styles.docInfoCell}>
+              <Text style={styles.docInfoHeader}>{"Номер\nдокумента"}</Text>
+              <Text style={styles.docInfoValue}>{data.documentNumber || ""}</Text>
             </View>
-            <View style={styles.docNumberCell}>
-              <Text style={styles.docNumberHeader}>{"Дата\nсоставления"}</Text>
-              <Text style={styles.docNumberValue}>{data.documentDate || ""}</Text>
+            <View style={styles.docInfoCell}>
+              <Text style={styles.docInfoHeader}>{"Дата\nсоставления"}</Text>
+              <Text style={styles.docInfoValue}>{data.documentDate || ""}</Text>
             </View>
-          </View>
-        </View>
-
-        {/* Сведения о запасах — ДО таблицы */}
-        <View style={styles.reservesBlock}>
-          <View style={styles.reservesLine}>
-            <Text>Сведения об использовании запасов, полученных от заказчика</Text>
-            <Text style={styles.reservesValue}>{data.reservesInfo || ""}</Text>
-          </View>
-          <Text style={styles.reservesCaption}>наименование, количество, стоимость</Text>
-          <Text style={styles.attachmentText}>
-            {"Приложение: Перечень документации, в том числе отчет(ы) о маркетинговых, научных исследованиях, консультационных и прочих услугах (обязательны при его (их) наличии) на "}
-            {data.attachmentPages || "_______________"}
-            {" страниц"}
-          </Text>
-        </View>
-
-        {/* Таблица */}
-        <View style={styles.table}>
-          <View style={styles.row}>
-            <View style={[styles.headerCellMerged, styles.colNum]}>
-              <Text style={styles.headerCellMergedText}>{"Номер по порядку"}</Text>
-            </View>
-            <View style={[styles.headerCellMerged, styles.colName]}>
-              <Text style={styles.headerCellMergedText}>
-                {"Наименование работ (услуг)\n(в разрезе их подвидов в соответствии с технической спецификацией, заданием, графиком выполнения работ (услуг) при их наличии)"}
-              </Text>
-            </View>
-            <View style={[styles.headerCellMerged, styles.colDate]}>
-              <Text style={styles.headerCellMergedText}>{"Дата выполнения работ\n(оказания услуг)**"}</Text>
-            </View>
-            <View style={[styles.headerCellMerged, styles.colReport]}>
-              <Text style={styles.headerCellMergedText}>
-                {"Сведения об отчете о научных исследованиях, маркетинговых, консультационных и прочих услугах (дата, номер, количество страниц) (при их наличии)***"}
-              </Text>
-            </View>
-            <View style={[styles.headerCellMerged, styles.colUnit]}>
-              <Text style={styles.headerCellMergedText}>{"Единица измерения"}</Text>
-            </View>
-            <View style={[styles.headerGroupWrap, styles.colDone]}>
-              <Text style={styles.headerGroupLabel}>{"Выполнено работ (оказано услуг)"}</Text>
-              <View style={styles.headerGroupRow}>
-                <Text style={[styles.headerCell, styles.colQty]}>{"количество"}</Text>
-                <Text style={[styles.headerCell, styles.colPrice]}>{"цена за единицу"}</Text>
-                <Text style={[styles.headerCell, styles.colSum]}>{"стоимость"}</Text>
+            <View style={styles.docInfoCellWide}>
+              <Text style={styles.docInfoHeader}>Отчётный период</Text>
+              <View style={styles.periodSplit}>
+                <View style={styles.periodCell}>
+                  <Text style={styles.docInfoHeader}>с</Text>
+                  <Text style={styles.docInfoValue}>{data.periodFrom || ""}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.docInfoHeader}>по</Text>
+                  <Text style={styles.docInfoValue}>{data.periodTo || ""}</Text>
+                </View>
               </View>
             </View>
           </View>
+        </View>
 
+        <Text style={styles.title}>АКТ ВЫПОЛНЕННЫХ РАБОТ (ОКАЗАННЫХ УСЛУГ)</Text>
+
+        <View style={styles.table}>
+          <View style={styles.row}>
+            <View style={[styles.headerCellMerged, styles.colNum]}>
+              <Text style={styles.headerCellMergedText}>Номер по порядку</Text>
+            </View>
+            <View style={[styles.headerCellMerged, styles.colName]}>
+              <Text style={styles.headerCellMergedText}>Наименование работ (услуг)</Text>
+            </View>
+            <View style={[styles.headerCellMerged, styles.colReport]}>
+              <Text style={styles.headerCellMergedText}>
+                Сведения о наличии отчёта о маркетинговых исследованиях, консультационных и прочих
+                услуг (дата, номер, количество страниц)
+              </Text>
+            </View>
+            <View style={[styles.headerCellMerged, styles.colUnit]}>
+              <Text style={styles.headerCellMergedText}>Единица измерения</Text>
+            </View>
+            <View style={[styles.headerGroupWrap, styles.colDone]}>
+              <Text style={styles.headerGroupLabel}>Выполнено работ (оказано услуг)</Text>
+              <View style={styles.headerGroupRow}>
+                <Text style={[styles.headerCell, styles.colQty]}>количество</Text>
+                <Text style={[styles.headerCell, styles.colPrice]}>цена за единицу</Text>
+                <Text style={[styles.headerCell, styles.colSum]}>стоимость</Text>
+              </View>
+            </View>
+          </View>
           <View style={styles.row}>
             <Text style={[styles.headerCell, styles.colNum]}>1</Text>
             <Text style={[styles.headerCell, styles.colName]}>2</Text>
-            <Text style={[styles.headerCell, styles.colDate]}>3</Text>
-            <Text style={[styles.headerCell, styles.colReport]}>4</Text>
-            <Text style={[styles.headerCell, styles.colUnit]}>5</Text>
-            <Text style={[styles.headerCell, styles.colQty]}>6</Text>
-            <Text style={[styles.headerCell, styles.colPrice]}>7</Text>
-            <Text style={[styles.headerCell, styles.colSum]}>8</Text>
+            <Text style={[styles.headerCell, styles.colReport]}>3</Text>
+            <Text style={[styles.headerCell, styles.colUnit]}>4</Text>
+            <Text style={[styles.headerCell, styles.colQty]}>5</Text>
+            <Text style={[styles.headerCell, styles.colPrice]}>6</Text>
+            <Text style={[styles.headerCell, styles.colSum]}>7</Text>
           </View>
-
           {data.items.map((item, index) => (
             <View style={styles.row} key={index}>
               <Text style={[styles.cell, styles.colNum]}>{index + 1}</Text>
               <Text style={[styles.cell, styles.colName]}>{item.name || ""}</Text>
-              <Text style={[styles.cell, styles.colDate]}>{item.performedDate || ""}</Text>
               <Text style={[styles.cell, styles.colReport]}>{item.reportInfo || ""}</Text>
               <Text style={[styles.cell, styles.colUnit]}>{item.unit || ""}</Text>
               <Text style={[styles.cell, styles.colQty]}>{formatNumber(item.quantity)}</Text>
@@ -379,61 +335,59 @@ export function AvrDocument({
               <Text style={[styles.cell, styles.colSum]}>{formatNumber(item.quantity * item.price)}</Text>
             </View>
           ))}
+        </View>
 
-          {/* Итого — "х" в колонке 7, "Итого" в колонке 5, как в оригинале */}
-          <View style={styles.row}>
-            <Text style={[styles.cell, styles.colNum]} />
-            <Text style={[styles.cell, styles.colName]} />
-            <Text style={[styles.cell, styles.colDate]} />
-            <Text style={[styles.cell, styles.colReport]} />
-            <Text style={[styles.cell, styles.colUnit, { fontWeight: "bold" }]}>{"Итого"}</Text>
-            <Text style={[styles.cell, styles.colQty]} />
-            <Text style={[styles.cell, styles.colPrice, { textAlign: "center" }]}>{"х"}</Text>
-            <Text style={[styles.cell, styles.colSum, { fontWeight: "bold" }]}>{formatNumber(total)}</Text>
+        <View style={styles.belowTable}>
+          <View style={styles.belowTableLine}>
+            <Text>Сведения об использовании запасов, полученных от заказчика</Text>
+            <Text style={styles.belowTableValue}>{data.reservesInfo || ""}</Text>
+          </View>
+          <View style={styles.belowTableLine}>
+            <Text>Приложение: Перечень документации</Text>
+            <Text style={styles.belowTableValue}>{data.attachmentPages || ""}</Text>
           </View>
         </View>
-      </Page>
 
-      {/* СТРАНИЦА 2 — оборотная сторона */}
-      <Page size="A4" style={styles.page2}>
-        <Text style={styles.page2Header}>Оборотная сторона формы Р-1</Text>
-
-        <View style={styles.signaturesTable}>
-          <View style={styles.sigCell}>
-            <Text style={styles.sigLine}>{"Сдал (Исполнитель)_____/_____/____"}</Text>
-            <Text style={styles.sigCaption}>{"должность    подпись    расшифровка подписи"}</Text>
-            <View style={{ marginTop: 8 }}>
+        <View style={styles.sigBlock}>
+          <View style={styles.sigHalf}>
+            <View style={styles.sigRow}>
+              <Text>Сдал (Исполнитель) </Text>
+              <SignatureSlot signature={null} />
+              <Text> / </Text>
               <SignatureSlot signature={signature} />
+              <Text> / </Text>
+              <SignatureSlot signature={null} />
             </View>
-          </View>
-          <View style={styles.sigCell}>
-            <Text style={styles.sigLine}>{"Принял (Заказчик)____/_____/____"}</Text>
-            <Text style={styles.sigCaption}>{"должность    подпись    расшифровка подписи"}</Text>
-          </View>
-        </View>
-
-        <View style={styles.stampTableRow}>
-          <View style={styles.stampCell}>
+            <View style={styles.sigCaptionRow}>
+              <Text style={styles.sigCaption}>должность</Text>
+              <Text style={styles.sigCaption}>подпись</Text>
+              <Text style={styles.sigCaption}>расшифровка подписи</Text>
+            </View>
             <View style={styles.stampRow}>
-              <Text>{"М.П."}</Text>
+              <Text>М.П.</Text>
               <StampOverlay stamp={stamp} />
             </View>
           </View>
-          <View style={styles.stampCell}>
-            <Text>{"Дата подписания (принятия) работ\n(услуг) ________________________"}</Text>
-            <Text style={{ marginTop: 12 }}>{"М.П."}</Text>
+
+          <View style={styles.sigHalf}>
+            <View style={styles.sigRow}>
+              <Text>Принял (Заказчик) </Text>
+              <SignatureSlot signature={null} />
+              <Text> / </Text>
+              <SignatureSlot signature={null} />
+              <Text> / </Text>
+              <SignatureSlot signature={null} />
+            </View>
+            <View style={styles.sigCaptionRow}>
+              <Text style={styles.sigCaption}>должность</Text>
+              <Text style={styles.sigCaption}>подпись</Text>
+              <Text style={styles.sigCaption}>расшифровка подписи</Text>
+            </View>
+            <View style={styles.stampRow}>
+              <Text>М.П.</Text>
+            </View>
           </View>
         </View>
-
-        <Text style={styles.footnote}>
-          {"*Применяется для приемки-передачи выполненных работ (оказанных услуг), за исключением строительно-монтажных работ."}
-        </Text>
-        <Text style={styles.footnote}>
-          {"**Заполняется в случае, если даты выполненных работ (оказанных услуг) приходятся на различные периоды, а также в случае, если даты выполнения работ (оказания услуг) и даты подписания (принятия) работ (услуг) различны."}
-        </Text>
-        <Text style={styles.footnote}>
-          {"***Заполняется в случае наличия отчета о научных исследованиях, маркетинговых, консультационных и прочих услугах."}
-        </Text>
       </Page>
     </Document>
   );

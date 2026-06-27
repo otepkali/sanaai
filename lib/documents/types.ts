@@ -40,7 +40,6 @@ export const EMPTY_REQUISITES: CompanyRequisites = {
 
 export interface AvrItem {
   name: string;
-  performedDate: string;
   reportInfo: string;
   unit: string;
   quantity: number;
@@ -50,7 +49,10 @@ export interface AvrItem {
 export interface AvrData {
   documentNumber: string;
   documentDate: string;
+  periodFrom: string;
+  periodTo: string;
   customerName: string;
+  customerBinIin: string;
   executorName: string;
   contractNumber: string;
   contractDate: string;

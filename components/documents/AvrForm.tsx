@@ -27,8 +27,7 @@ let nextId = 1;
 const createItem = (): EditableItem => ({
   id: nextId++,
   name: "",
-  performedDate: "",
-  reportInfo: "—",
+  reportInfo: "",
   unit: "шт.",
   quantity: 1,
   price: 0,
@@ -38,7 +37,10 @@ export function AvrForm() {
   const { user } = useUser();
   const [documentNumber, setDocumentNumber] = useState("1");
   const [documentDate, setDocumentDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [periodFrom, setPeriodFrom] = useState("");
+  const [periodTo, setPeriodTo] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [customerBinIin, setCustomerBinIin] = useState("");
   const [executorName, setExecutorName] = useState("");
   const [contractNumber, setContractNumber] = useState("");
   const [contractDate, setContractDate] = useState("");
@@ -50,7 +52,10 @@ export function AvrForm() {
 
   const documentNumberId = useId();
   const documentDateId = useId();
+  const periodFromId = useId();
+  const periodToId = useId();
   const customerNameId = useId();
+  const customerBinIinId = useId();
   const executorNameId = useId();
   const contractNumberId = useId();
   const contractDateId = useId();
@@ -69,15 +74,17 @@ export function AvrForm() {
     return {
       documentNumber,
       documentDate,
+      periodFrom,
+      periodTo,
       customerName,
+      customerBinIin,
       executorName,
       contractNumber,
       contractDate,
       reservesInfo: "",
       attachmentPages: "",
-      items: items.map(({ name, performedDate, reportInfo, unit, quantity, price }) => ({
+      items: items.map(({ name, reportInfo, unit, quantity, price }) => ({
         name,
-        performedDate,
         reportInfo,
         unit,
         quantity,
@@ -170,6 +177,30 @@ export function AvrForm() {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor={periodFromId} className="text-sm text-text-muted">
+                  Отчётный период с
+                </Label>
+                <Input
+                  id={periodFromId}
+                  value={periodFrom}
+                  onChange={(e) => setPeriodFrom(e.target.value)}
+                  placeholder="01.06.2026"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor={periodToId} className="text-sm text-text-muted">
+                  по
+                </Label>
+                <Input
+                  id={periodToId}
+                  value={periodTo}
+                  onChange={(e) => setPeriodTo(e.target.value)}
+                  placeholder="30.06.2026"
+                />
+              </div>
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor={customerNameId} className="text-sm text-text-muted">
                 Заказчик
@@ -179,6 +210,17 @@ export function AvrForm() {
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder='ТОО "Заказчик", БИН ..., адрес'
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={customerBinIinId} className="text-sm text-text-muted">
+                БИН/ИИН заказчика
+              </Label>
+              <Input
+                id={customerBinIinId}
+                value={customerBinIin}
+                onChange={(e) => setCustomerBinIin(e.target.value)}
+                className="font-tabular"
               />
             </div>
             <div className="space-y-1.5">
@@ -237,7 +279,6 @@ export function AvrForm() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-text-muted">Наименование</TableHead>
-                  <TableHead className="w-32 text-text-muted">Дата выполнения</TableHead>
                   <TableHead className="w-24 text-text-muted">Ед.</TableHead>
                   <TableHead className="w-24 text-text-muted">Кол-во</TableHead>
                   <TableHead className="w-32 text-text-muted">Цена</TableHead>
@@ -253,13 +294,6 @@ export function AvrForm() {
                         value={item.name}
                         onChange={(e) => updateItem(item.id, { name: e.target.value })}
                         placeholder="Наименование работ/услуг"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={item.performedDate}
-                        onChange={(e) => updateItem(item.id, { performedDate: e.target.value })}
-                        placeholder="27.06.2026"
                       />
                     </TableCell>
                     <TableCell>

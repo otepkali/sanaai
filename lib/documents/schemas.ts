@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const avrItemSchema = z.object({
   name: z.string(),
-  performedDate: z.string(),
   reportInfo: z.string(),
   unit: z.string(),
   quantity: z.number(),
@@ -12,7 +11,10 @@ export const avrItemSchema = z.object({
 export const avrDataSchema = z.object({
   documentNumber: z.string(),
   documentDate: z.string(),
+  periodFrom: z.string(),
+  periodTo: z.string(),
   customerName: z.string(),
+  customerBinIin: z.string(),
   executorName: z.string(),
   contractNumber: z.string(),
   contractDate: z.string(),

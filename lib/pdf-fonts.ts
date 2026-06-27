@@ -27,6 +27,7 @@ Font.register({
   fonts: [
     { src: path.join(fontsDir, "timesnewromanpsmt.ttf"), fontWeight: "normal" },
     { src: path.join(fontsDir, "timesnewromanbold.ttf"), fontWeight: "bold" },
+    { src: path.join(fontsDir, "timesnewromanitalic.ttf"), fontStyle: "italic" },
   ],
 });
 
@@ -60,7 +61,8 @@ export function ensureFontWarmedUp(): Promise<void> {
         Page,
         { style: { fontFamily: PDF_FONT_FAMILY_SERIF } },
         createElement(Text, { style: { fontWeight: "normal" } }, WARMUP_CHARS),
-        createElement(Text, { style: { fontWeight: "bold" } }, WARMUP_CHARS)
+        createElement(Text, { style: { fontWeight: "bold" } }, WARMUP_CHARS),
+        createElement(Text, { style: { fontStyle: "italic" } }, WARMUP_CHARS)
       )
     );
     warmupPromise = renderToBuffer(doc as never).then(() => undefined);
