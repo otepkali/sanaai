@@ -49,6 +49,7 @@ function getFontFaceCss(): string {
 
 export interface AvrHtmlData {
   binIin: string;
+  customerBinIin?: string;
   customerName: string;
   customerAddress: string;
   executorName: string;
@@ -154,25 +155,11 @@ export function generateAvrHtml(data: AvrHtmlData): string {
     font-style: normal;
   }
 
-  /* ИИН/БИН */
-  .bin-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 4px;
-  }
-  .bin-box {
-    border: 1px solid #000;
-    min-width: 120px;
-    padding: 1px 4px;
-    font-size: 9pt;
-  }
-
   /* Реквизиты сторон */
   .party-row {
     display: flex;
-    align-items: baseline;
-    margin-bottom: 1px;
+    align-items: flex-start;
+    margin-bottom: 4px;
   }
   .party-label {
     font-weight: bold;
@@ -180,18 +167,40 @@ export function generateAvrHtml(data: AvrHtmlData): string {
     margin-right: 4px;
     min-width: 62px;
   }
-  .party-value {
+  .party-value-wrap {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .party-value {
     border-bottom: 1px solid #000;
     padding-bottom: 1px;
     font-size: 8.5pt;
     font-weight: bold;
   }
+  .party-bin {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 10px;
+    white-space: nowrap;
+  }
+  .party-bin-label {
+    font-size: 8pt;
+    font-weight: bold;
+  }
+  .party-bin-box {
+    border: 1px solid #000;
+    min-width: 110px;
+    padding: 1px 4px;
+    font-size: 9pt;
+    text-align: center;
+  }
   .sub-caption {
     font-size: 7pt;
     font-style: italic;
     color: #444;
-    margin-left: 66px;
+    text-align: center;
     margin-bottom: 3px;
   }
 
@@ -206,6 +215,8 @@ export function generateAvrHtml(data: AvrHtmlData): string {
     white-space: nowrap;
     font-size: 8.5pt;
     padding-top: 6px;
+    border-bottom: 1px solid #000;
+    padding-bottom: 1px;
   }
   .act-title {
     flex: 1;
@@ -283,6 +294,9 @@ export function generateAvrHtml(data: AvrHtmlData): string {
     font-size: 7.5pt;
     line-height: 1.2;
   }
+  table.main td {
+    font-weight: normal;
+  }
   table.main td.center { text-align: center; }
   table.main td.right  { text-align: right; }
   table.main .col-num    { width: 22px; }
@@ -292,7 +306,6 @@ export function generateAvrHtml(data: AvrHtmlData): string {
   table.main .col-qty    { width: 38px; }
   table.main .col-price  { width: 72px; }
   table.main .col-sum    { width: 78px; }
-  table.main .total-row td { font-weight: bold; }
 
   /* Блок подписей */
   .signatures {
@@ -362,25 +375,31 @@ export function generateAvrHtml(data: AvrHtmlData): string {
     </div>
   </div>
 
-  <!-- ИИН/БИН -->
-  <div class="bin-row">
-    <strong>ИИН/БИН</strong>
-    <span class="bin-box">${escapeHtml(data.binIin)}</span>
-  </div>
-
   <!-- Заказчик -->
   <div class="party-row">
     <span class="party-label">Заказчик</span>
-    <span class="party-value">${customerLine}</span>
+    <div class="party-value-wrap">
+      <span class="party-value">${customerLine}</span>
+      <div class="sub-caption">полное наименование, адрес, данные о средствах связи</div>
+    </div>
+    <span class="party-bin">
+      <span class="party-bin-label">ИИН/БИН</span>
+      <span class="party-bin-box">${escapeHtml(data.customerBinIin ?? "")}</span>
+    </span>
   </div>
-  <div class="sub-caption">полное наименование, адрес, данные о средствах связи</div>
 
   <!-- Исполнитель -->
   <div class="party-row">
     <span class="party-label">Исполнитель</span>
-    <span class="party-value">${executorLine}</span>
+    <div class="party-value-wrap">
+      <span class="party-value">${executorLine}</span>
+      <div class="sub-caption">полное наименование, адрес, данные о средствах связи</div>
+    </div>
+    <span class="party-bin">
+      <span class="party-bin-label">ИИН/БИН</span>
+      <span class="party-bin-box">${escapeHtml(data.binIin)}</span>
+    </span>
   </div>
-  <div class="sub-caption">полное наименование, адрес, данные о средствах связи</div>
 
   <!-- Договор + Заголовок АКТ + Номер/Дата -->
   <div class="contract-title-row">
@@ -404,17 +423,6 @@ export function generateAvrHtml(data: AvrHtmlData): string {
         </tr>
       </table>
     </div>
-  </div>
-
-  <!-- Сведения о запасах -->
-  <div class="reserves-row">
-    <span>Сведения об использовании запасов, полученных от заказчика</span>
-    <span class="reserves-value">${escapeHtml(data.reservesInfo ?? "")}</span>
-  </div>
-  <div class="reserves-caption">наименование, количество, стоимость</div>
-  <div class="attachment-text">
-    Приложение: Перечень документации, в том числе отчет(ы) о маркетинговых, научных исследованиях,
-    консультационных и прочих услугах (обязательны при его (их) наличии) — ${escapeHtml(data.attachmentNote ?? "")}
   </div>
 
   <!-- ТАБЛИЦА -->
@@ -451,6 +459,17 @@ export function generateAvrHtml(data: AvrHtmlData): string {
       </tr>
     </tfoot>
   </table>
+
+  <!-- Сведения о запасах -->
+  <div class="reserves-row">
+    <span>Сведения об использовании запасов, полученных от заказчика</span>
+    <span class="reserves-value">${escapeHtml(data.reservesInfo ?? "")}</span>
+  </div>
+  <div class="reserves-caption">наименование, количество, стоимость</div>
+  <div class="attachment-text">
+    Приложение: Перечень документации, в том числе отчет(ы) о маркетинговых, научных исследованиях,
+    консультационных и прочих услугах (обязательны при его (их) наличии) — ${escapeHtml(data.attachmentNote ?? "")}
+  </div>
 
   <!-- ПОДПИСИ -->
   <div class="signatures">

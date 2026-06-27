@@ -61,6 +61,7 @@ export async function POST(request: Request) {
 
   const html = generateAvrHtml({
     binIin: requisites.binIin,
+    customerBinIin: data.customerBinIin,
     customerName: data.customerName,
     customerAddress: "",
     executorName,
