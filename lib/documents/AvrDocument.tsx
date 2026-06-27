@@ -1,19 +1,19 @@
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
-import { PDF_FONT_FAMILY } from "@/lib/pdf-fonts";
+import { PDF_FONT_FAMILY_SERIF } from "@/lib/pdf-fonts";
 import { BORDER, SignatureSlot, StampOverlay } from "./pdf-elements";
 import { formatDecimal } from "@/lib/format";
 import type { AvrData, CompanyRequisites } from "./types";
 
 const styles = StyleSheet.create({
   page: {
-    padding: "14mm 14mm",
-    fontFamily: PDF_FONT_FAMILY,
-    fontSize: 8.5,
+    padding: "14mm 16mm",
+    fontFamily: PDF_FONT_FAMILY_SERIF,
+    fontSize: 11,
     color: "#000000",
   },
   headerBlock: {
     alignSelf: "flex-end",
-    width: 260,
+    width: 300,
     textAlign: "right",
     marginBottom: 4,
   },
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   },
   binBoxValue: {
     border: BORDER,
-    minWidth: 140,
+    minWidth: 160,
     padding: 3,
   },
   partyLine: {
@@ -47,13 +47,13 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   caption: {
-    fontSize: 7,
-    // italic недоступен — Arimo не зарегистрирован для этого стиля
+    fontSize: 9,
+    // italic недоступен — Tinos зарегистрирован только Regular/Bold
     color: "#444444",
     marginBottom: 8,
   },
   title: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: "bold",
     textAlign: "center",
     marginTop: 6,
@@ -70,11 +70,11 @@ const styles = StyleSheet.create({
   },
   docNumberCell: {
     border: BORDER,
-    width: 80,
+    width: 90,
     textAlign: "center",
   },
   docNumberHeader: {
-    fontSize: 7,
+    fontSize: 9,
     padding: 3,
     borderBottom: BORDER,
   },
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     borderRight: BORDER,
     borderBottom: BORDER,
     padding: 3,
-    fontSize: 7,
+    fontSize: 9,
     fontWeight: "bold",
     textAlign: "center",
   },
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     borderRight: BORDER,
     borderBottom: BORDER,
     padding: 3,
-    fontSize: 7.5,
+    fontSize: 10,
   },
   colNum: { flex: 0.5, textAlign: "center" },
   colName: { flex: 3 },
@@ -134,8 +134,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   signatureCaption: {
-    fontSize: 7,
-    // italic недоступен — Arimo не зарегистрирован для этого стиля
+    fontSize: 9,
+    // italic недоступен — Tinos зарегистрирован только Regular/Bold
     color: "#444444",
     marginTop: 2,
   },
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   },
   footnote: {
     marginTop: 18,
-    fontSize: 7,
+    fontSize: 9,
     color: "#444444",
     lineHeight: 1.3,
   },
@@ -178,7 +178,7 @@ export function AvrDocument({
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" orientation="landscape" style={styles.page}>
         <View>
           <Text style={styles.headerBlock}>
             Приложение 50{"\n"}к приказу Министра финансов{"\n"}Республики Казахстан{"\n"}от 20 декабря
@@ -292,7 +292,7 @@ export function AvrDocument({
         </View>
       </Page>
 
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" orientation="landscape" style={styles.page}>
         <Text style={{ alignSelf: "flex-end", marginBottom: 16 }}>Оборотная сторона формы Р-1</Text>
 
         <View style={styles.signatureBlock}>

@@ -3,18 +3,30 @@ import { createElement } from "react";
 import { Font, Document, Page, Text, renderToBuffer } from "@react-pdf/renderer";
 
 export const PDF_FONT_FAMILY = "Arimo";
+/** Метрически совместимая открытая замена Times New Roman — для официальных
+ *  бланков (АВР и т.п.), где исходная форма набрана именно этим шрифтом. */
+export const PDF_FONT_FAMILY_SERIF = "Tinos";
 
 const fontsDir = path.join(process.cwd(), "public", "fonts");
 
 // Arimo — open-лицензионный шрифт, метрически и визуально совместимый с Arial
 // (как у 1С/МоегоСклада), но без ограничений на распространение файлов Arial.
-// Регистрация в одном модуле — InvoiceDocument и ReportDocument импортируют
-// его только за побочный эффект, чтобы не регистрировать шрифт дважды.
+// Tinos — тот же проект Google, аналог для Times New Roman (Apache 2.0 / OFL).
+// Регистрация в одном модуле — документы импортируют его только за побочный
+// эффект, чтобы не регистрировать шрифты дважды.
 Font.register({
   family: PDF_FONT_FAMILY,
   fonts: [
     { src: path.join(fontsDir, "Arimo-Regular.ttf"), fontWeight: "normal" },
     { src: path.join(fontsDir, "Arimo-Bold.ttf"), fontWeight: "bold" },
+  ],
+});
+
+Font.register({
+  family: PDF_FONT_FAMILY_SERIF,
+  fonts: [
+    { src: path.join(fontsDir, "Tinos-Regular.ttf"), fontWeight: "normal" },
+    { src: path.join(fontsDir, "Tinos-Bold.ttf"), fontWeight: "bold" },
   ],
 });
 
@@ -41,6 +53,12 @@ export function ensureFontWarmedUp(): Promise<void> {
       createElement(
         Page,
         { style: { fontFamily: PDF_FONT_FAMILY } },
+        createElement(Text, { style: { fontWeight: "normal" } }, WARMUP_CHARS),
+        createElement(Text, { style: { fontWeight: "bold" } }, WARMUP_CHARS)
+      ),
+      createElement(
+        Page,
+        { style: { fontFamily: PDF_FONT_FAMILY_SERIF } },
         createElement(Text, { style: { fontWeight: "normal" } }, WARMUP_CHARS),
         createElement(Text, { style: { fontWeight: "bold" } }, WARMUP_CHARS)
       )

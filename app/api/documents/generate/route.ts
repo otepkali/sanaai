@@ -1,5 +1,6 @@
 import { createElement, type ReactElement } from "react";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
 import { ensureFontWarmedUp } from "@/lib/pdf-fonts";
@@ -39,7 +40,8 @@ export async function POST(request: Request) {
 
   const parsed = generateDocumentSchema.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Проверьте заполненные поля" }, { status: 400 });
+    console.error("Не прошла валидация данных документа", z.treeifyError(parsed.error));
+    return NextResponse.json({ error: "Проверьте заполненные поля", details: z.treeifyError(parsed.error) }, { status: 400 });
   }
 
   let requisites;

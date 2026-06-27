@@ -98,7 +98,9 @@ export function AvrForm() {
         body: JSON.stringify({ type: "avr", data: buildData() }),
       });
       if (!response.ok) {
-        setMessage("Не удалось сформировать документ. Проверьте заполненные поля.");
+        const errorBody: { error?: unknown } | null = await response.json().catch(() => null);
+        const detail = typeof errorBody?.error === "string" ? errorBody.error : null;
+        setMessage(detail ? `Не удалось сформировать документ: ${detail}` : "Не удалось сформировать документ.");
         return;
       }
       const blob = await response.blob();
