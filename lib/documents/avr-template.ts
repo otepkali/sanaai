@@ -159,7 +159,7 @@ export function generateAvrHtml(data: AvrHtmlData): string {
   .party-row {
     display: flex;
     align-items: flex-start;
-    margin-bottom: 4px;
+    margin-bottom: 10px;
   }
   .party-label {
     font-weight: bold;
@@ -173,8 +173,11 @@ export function generateAvrHtml(data: AvrHtmlData): string {
     flex-direction: column;
   }
   .party-value {
+    display: block;
+    min-height: 13px;
     border-bottom: 1px solid #000;
     padding-bottom: 1px;
+    margin-bottom: 4px;
     font-size: 8.5pt;
     font-weight: bold;
   }
@@ -217,19 +220,18 @@ export function generateAvrHtml(data: AvrHtmlData): string {
     gap: 4px;
     white-space: nowrap;
     font-size: 8.5pt;
-    padding-top: 6px;
   }
   .contract-value {
     border-bottom: 1px solid #000;
     padding-bottom: 1px;
-    min-width: 140px;
+    min-width: 260px;
   }
   .act-title {
     flex: 1;
     text-align: center;
     font-weight: bold;
     font-size: 10pt;
-    padding-top: 4px;
+    padding-top: 12px;
   }
   .doc-number-box {
     border: 1px solid #000;
