@@ -208,15 +208,21 @@ export function generateAvrHtml(data: AvrHtmlData): string {
   .contract-title-row {
     display: flex;
     align-items: flex-start;
-    margin: 4px 0;
+    margin: 14px 0 12px;
     gap: 8px;
   }
   .contract-part {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
     white-space: nowrap;
     font-size: 8.5pt;
     padding-top: 6px;
+  }
+  .contract-value {
     border-bottom: 1px solid #000;
     padding-bottom: 1px;
+    min-width: 140px;
   }
   .act-title {
     flex: 1;
@@ -271,7 +277,7 @@ export function generateAvrHtml(data: AvrHtmlData): string {
   }
   .attachment-text {
     font-size: 8pt;
-    margin-bottom: 5px;
+    margin-bottom: 18px;
   }
 
   /* Таблица */
@@ -279,7 +285,7 @@ export function generateAvrHtml(data: AvrHtmlData): string {
     width: 100%;
     border-collapse: collapse;
     font-size: 8pt;
-    margin-bottom: 4px;
+    margin-bottom: 14px;
   }
   table.main th,
   table.main td {
@@ -311,7 +317,7 @@ export function generateAvrHtml(data: AvrHtmlData): string {
   .signatures {
     display: flex;
     gap: 0;
-    margin-top: 6px;
+    margin-top: 10px;
   }
   .sig-half {
     flex: 1;
@@ -325,7 +331,7 @@ export function generateAvrHtml(data: AvrHtmlData): string {
     display: flex;
     align-items: flex-end;
     gap: 4px;
-    margin-bottom: 2px;
+    margin-bottom: 6px;
   }
   .sig-underline {
     flex: 1;
@@ -339,17 +345,17 @@ export function generateAvrHtml(data: AvrHtmlData): string {
     font-size: 7pt;
     font-style: italic;
     color: #444;
-    margin-bottom: 4px;
+    margin-bottom: 14px;
   }
   .stamp-sig-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 6px;
+    margin-top: 8px;
   }
   .date-line {
     font-size: 8.5pt;
-    margin-top: 10px;
+    margin-top: 14px;
   }
   .mp-label { font-size: 9pt; white-space: nowrap; }
 
@@ -404,7 +410,8 @@ export function generateAvrHtml(data: AvrHtmlData): string {
   <!-- Договор + Заголовок АКТ + Номер/Дата -->
   <div class="contract-title-row">
     <span class="contract-part">
-      Договор (контракт) № ${escapeHtml(data.contractNumber ?? "___")} от ${escapeHtml(data.contractDate ?? "___")}
+      <span>Договор (контракт)</span>
+      <span class="contract-value">№ ${escapeHtml(data.contractNumber ?? "")} от ${escapeHtml(data.contractDate ?? "")}</span>
     </span>
     <span class="act-title">АКТ ВЫПОЛНЕННЫХ РАБОТ (ОКАЗАННЫХ УСЛУГ)</span>
     <div class="doc-number-box">
