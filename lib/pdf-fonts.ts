@@ -4,10 +4,8 @@ import { Font, Document, Page, Text, renderToBuffer } from "@react-pdf/renderer"
 
 export const PDF_FONT_FAMILY = "Arimo";
 /** Для официальных бланков (АВР и т.п.), где исходная форма набрана Times
- *  New Roman — используется реальный файл шрифта (добавлен по решению
- *  пользователя, на свою ответственность по лицензии Microsoft); жирное
- *  начертание берём из Tinos (открытый аналог), так как загружен только
- *  обычный вес. */
+ *  New Roman — используются реальные файлы шрифта (добавлены по решению
+ *  пользователя, на свою ответственность по лицензии Microsoft). */
 export const PDF_FONT_FAMILY_SERIF = "TimesNewRoman";
 
 const fontsDir = path.join(process.cwd(), "public", "fonts");
@@ -28,7 +26,7 @@ Font.register({
   family: PDF_FONT_FAMILY_SERIF,
   fonts: [
     { src: path.join(fontsDir, "timesnewromanpsmt.ttf"), fontWeight: "normal" },
-    { src: path.join(fontsDir, "Tinos-Bold.ttf"), fontWeight: "bold" },
+    { src: path.join(fontsDir, "timesnewromanbold.ttf"), fontWeight: "bold" },
   ],
 });
 

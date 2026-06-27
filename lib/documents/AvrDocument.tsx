@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   },
   caption: {
     fontSize: 9,
-    // italic недоступен — Tinos зарегистрирован только Regular/Bold
+    // italic недоступен — у TimesNewRoman зарегистрированы только Regular/Bold
     color: "#444444",
     marginBottom: 8,
   },
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   },
   signatureCaption: {
     fontSize: 9,
-    // italic недоступен — Tinos зарегистрирован только Regular/Bold
+    // italic недоступен — у TimesNewRoman зарегистрированы только Regular/Bold
     color: "#444444",
     marginTop: 2,
   },
