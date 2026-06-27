@@ -279,7 +279,7 @@ export function generateAvrHtml(data: AvrHtmlData): string {
   }
   .attachment-text {
     font-size: 8pt;
-    margin-bottom: 28px;
+    margin-bottom: 55px;
   }
 
   /* Таблица */
@@ -348,22 +348,26 @@ export function generateAvrHtml(data: AvrHtmlData): string {
     position: relative;
     overflow: visible;
   }
+  .signature-overlay {
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    transform: translateX(-50%);
+    z-index: -1;
+  }
   .signature-img {
-    height: 42px;
-    vertical-align: middle;
-    position: relative;
-    z-index: 1;
+    height: 70px;
   }
   .stamp-overlay {
     position: absolute;
     left: 50%;
-    bottom: -18px;
+    bottom: -30px;
     transform: translateX(-50%);
-    z-index: 2;
+    z-index: -1;
   }
   .stamp-img {
-    height: 95px;
-    opacity: 0.85;
+    height: 150px;
+    opacity: 0.75;
   }
   .sig-caption {
     font-size: 7pt;
@@ -510,7 +514,7 @@ export function generateAvrHtml(data: AvrHtmlData): string {
         <span class="sig-underline">${escapeHtml(data.executorPosition ?? "")}</span>
         <span>/</span>
         <span class="sig-underline sig-underline-signature">
-          ${signatureImg}
+          <span class="signature-overlay">${signatureImg}</span>
           <span class="stamp-overlay">${stampImg}</span>
         </span>
         <span>/</span>
