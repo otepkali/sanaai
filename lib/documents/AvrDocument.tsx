@@ -36,6 +36,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontWeight: "bold",
     textAlign: "center",
+    borderBottom: BORDER,
+    paddingBottom: 1,
   },
   binBox: {
     width: 130,
