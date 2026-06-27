@@ -21,21 +21,30 @@ function FileSlot({
   path,
   onUpload,
   isUploading,
+  error,
 }: {
   label: string;
   path: string | null;
   onUpload: (file: File) => void;
   isUploading: boolean;
+  error: string | null;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!path) {
-      Promise.resolve().then(() => setPreviewUrl(null));
+      Promise.resolve().then(() => {
+        setPreviewUrl(null);
+        setPreviewError(null);
+      });
       return;
     }
-    getCompanyFileSignedUrl(path).then(setPreviewUrl);
+    getCompanyFileSignedUrl(path).then((url) => {
+      setPreviewUrl(url);
+      setPreviewError(url ? null : "Не удалось получить ссылку на загруженный файл");
+    });
   }, [path]);
 
   return (
@@ -69,9 +78,12 @@ function FileSlot({
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) onUpload(file);
+            e.target.value = "";
           }}
         />
       </div>
+      {error ? <p className="text-xs text-danger">{error}</p> : null}
+      {!error && previewError ? <p className="text-xs text-danger">{previewError}</p> : null}
     </div>
   );
 }
@@ -83,6 +95,10 @@ export function RequisitesForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [uploadingKind, setUploadingKind] = useState<"signature" | "stamp" | null>(null);
+  const [uploadErrors, setUploadErrors] = useState<{ signature: string | null; stamp: string | null }>({
+    signature: null,
+    stamp: null,
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -116,11 +132,18 @@ export function RequisitesForm() {
   async function handleUpload(kind: "signature" | "stamp", file: File) {
     if (!user) return;
     setUploadingKind(kind);
+    setUploadErrors((prev) => ({ ...prev, [kind]: null }));
     try {
       const path = await uploadCompanyFile(user.id, kind, file);
-      patch(kind === "signature" ? { signaturePath: path } : { stampPath: path });
+      const nextRequisites = { ...requisites, ...(kind === "signature" ? { signaturePath: path } : { stampPath: path }) };
+      setRequisites(nextRequisites);
+      // Сохраняем реквизиты сразу — иначе путь к файлу теряется при перезагрузке,
+      // если пользователь не нажмёт «Сохранить» отдельно после загрузки.
+      await upsertRequisites(user.id, nextRequisites);
     } catch (error) {
       console.error("Не удалось загрузить файл", error);
+      const description = error instanceof Error ? error.message : "неизвестная ошибка";
+      setUploadErrors((prev) => ({ ...prev, [kind]: `Не удалось загрузить файл: ${description}` }));
     } finally {
       setUploadingKind(null);
     }
@@ -269,11 +292,13 @@ export function RequisitesForm() {
             path={requisites.signaturePath}
             onUpload={(file) => handleUpload("signature", file)}
             isUploading={uploadingKind === "signature"}
+            error={uploadErrors.signature}
           />
           <FileSlot
             label="Печать организации"
             path={requisites.stampPath}
             onUpload={(file) => handleUpload("stamp", file)}
+            error={uploadErrors.stamp}
             isUploading={uploadingKind === "stamp"}
           />
         </CardContent>
