@@ -238,6 +238,19 @@ export function AvrDocument({
           </Text>
         </View>
 
+        <View style={styles.belowTable}>
+          <View style={styles.belowTableLine}>
+            <Text style={styles.belowTableLabel}>Сведения об использовании запасов, полученных от заказчика</Text>
+            <Text style={styles.belowTableValue}>{data.reservesInfo || ""}</Text>
+          </View>
+          <Text style={styles.caption}>наименование, количество, стоимость</Text>
+          <Text style={{ marginTop: 6 }}>
+            Приложение: Перечень документации, в том числе отчёт(ы) о маркетинговых, научных
+            исследованиях, консультационных и прочих услугах (обязательны при его (их) наличии) на{" "}
+            {data.attachmentPages || "_____"} страниц
+          </Text>
+        </View>
+
         <View style={styles.titleRow}>
           <Text style={[styles.title, { flex: 1 }]}>
             АКТ ВЫПОЛНЕННЫХ РАБОТ (ОКАЗАННЫХ УСЛУГ)*
@@ -313,28 +326,15 @@ export function AvrDocument({
           <View style={styles.row}>
             <Text style={[styles.cell, styles.colNum]} />
             <Text style={[styles.cell, styles.colName, { fontWeight: "bold" }]}>Итого</Text>
-            <Text style={[styles.cell, styles.colDate, { textAlign: "center" }]}>х</Text>
+            <Text style={[styles.cell, styles.colDate]} />
             <Text style={[styles.cell, styles.colReport]} />
-            <Text style={[styles.cell, styles.colUnit]} />
+            <Text style={[styles.cell, styles.colUnit, { textAlign: "center" }]}>х</Text>
             <Text style={[styles.cell, styles.colQty]} />
             <Text style={[styles.cell, styles.colPrice]} />
             <Text style={[styles.cell, styles.colSum, { fontWeight: "bold" }]}>
               {formatNumber(total)}
             </Text>
           </View>
-        </View>
-
-        <View style={styles.belowTable}>
-          <View style={styles.belowTableLine}>
-            <Text style={styles.belowTableLabel}>Сведения об использовании запасов, полученных от заказчика</Text>
-            <Text style={styles.belowTableValue}>{data.reservesInfo || ""}</Text>
-          </View>
-          <Text style={styles.caption}>наименование, количество, стоимость</Text>
-          <Text style={{ marginTop: 6 }}>
-            Приложение: Перечень документации, в том числе отчёт(ы) о маркетинговых, научных
-            исследованиях, консультационных и прочих услугах (обязательны при его (их) наличии) на{" "}
-            {data.attachmentPages || "_____"} страниц
-          </Text>
         </View>
       </Page>
 
@@ -345,9 +345,13 @@ export function AvrDocument({
           <View style={styles.signaturePartyHalf}>
             <View style={styles.signatureFieldRow}>
               <Text>Сдал (Исполнитель)</Text>
+              <SignatureSlot signature={null} />
+              <Text> / </Text>
               <SignatureSlot signature={signature} />
+              <Text> / </Text>
+              <SignatureSlot signature={null} />
             </View>
-            <Text style={styles.signatureCaption}>должность · подпись · расшифровка подписи</Text>
+            <Text style={styles.signatureCaption}>должность   подпись   расшифровка подписи</Text>
             <View style={styles.stampRow}>
               <Text>М.П.</Text>
               <StampOverlay stamp={stamp} />
@@ -358,8 +362,12 @@ export function AvrDocument({
             <View style={styles.signatureFieldRow}>
               <Text>Принял (Заказчик)</Text>
               <SignatureSlot signature={null} />
+              <Text> / </Text>
+              <SignatureSlot signature={null} />
+              <Text> / </Text>
+              <SignatureSlot signature={null} />
             </View>
-            <Text style={styles.signatureCaption}>должность · подпись · расшифровка подписи</Text>
+            <Text style={styles.signatureCaption}>должность   подпись   расшифровка подписи</Text>
             <Text style={{ marginTop: 28 }}>
               Дата подписания (принятия) работ (услуг) ______________________
             </Text>
