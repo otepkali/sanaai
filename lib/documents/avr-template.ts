@@ -98,11 +98,11 @@ export function generateAvrHtml(data: AvrHtmlData): string {
     .join("");
 
   const signatureImg = data.signatureImageBase64
-    ? `<img src="${data.signatureImageBase64}" style="height:28px;vertical-align:middle;">`
+    ? `<img src="${data.signatureImageBase64}" class="signature-img">`
     : "";
 
   const stampImg = data.stampImageBase64
-    ? `<img src="${data.stampImageBase64}" style="height:56px;vertical-align:middle;">`
+    ? `<img src="${data.stampImageBase64}" class="stamp-img">`
     : "";
 
   const customerLine = [escapeHtml(data.customerName), escapeHtml(data.customerAddress)]
@@ -279,7 +279,7 @@ export function generateAvrHtml(data: AvrHtmlData): string {
   }
   .attachment-text {
     font-size: 8pt;
-    margin-bottom: 18px;
+    margin-bottom: 28px;
   }
 
   /* Таблица */
@@ -341,7 +341,29 @@ export function generateAvrHtml(data: AvrHtmlData): string {
     min-height: 20px;
     display: flex;
     align-items: flex-end;
+    justify-content: center;
     padding-bottom: 1px;
+  }
+  .sig-underline-signature {
+    position: relative;
+    overflow: visible;
+  }
+  .signature-img {
+    height: 42px;
+    vertical-align: middle;
+    position: relative;
+    z-index: 1;
+  }
+  .stamp-overlay {
+    position: absolute;
+    left: 50%;
+    bottom: -18px;
+    transform: translateX(-50%);
+    z-index: 2;
+  }
+  .stamp-img {
+    height: 95px;
+    opacity: 0.85;
   }
   .sig-caption {
     font-size: 7pt;
@@ -487,14 +509,16 @@ export function generateAvrHtml(data: AvrHtmlData): string {
         <span>Сдал (Исполнитель)</span>
         <span class="sig-underline">${escapeHtml(data.executorPosition ?? "")}</span>
         <span>/</span>
-        <span class="sig-underline">${signatureImg}</span>
+        <span class="sig-underline sig-underline-signature">
+          ${signatureImg}
+          <span class="stamp-overlay">${stampImg}</span>
+        </span>
         <span>/</span>
         <span class="sig-underline">${escapeHtml(data.executorSignatureName ?? "")}</span>
       </div>
       <div class="sig-caption">должность &nbsp;&nbsp; подпись &nbsp;&nbsp; расшифровка подписи</div>
       <div class="stamp-sig-row">
         <span class="mp-label">М.П.</span>
-        ${stampImg}
       </div>
     </div>
 
