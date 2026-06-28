@@ -106,10 +106,10 @@ export function WaybillForm() {
     setMessage(null);
     setIsDownloading(true);
     try {
-      const response = await fetch("/api/documents/generate", {
+      const response = await fetch("/api/documents/waybill-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "waybill", data: buildData() }),
+        body: JSON.stringify(buildData()),
       });
       if (!response.ok) {
         const errorBody: { error?: unknown } | null = await response.json().catch(() => null);
