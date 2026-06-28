@@ -229,6 +229,9 @@ export function generateWaybillHtml(data: WaybillHtmlData): string {
     gap: 6px;
     margin-top: 24px;
   }
+  .signature-half > .signature-field-row:first-child {
+    margin-top: 0;
+  }
   .signature-slot {
     flex: 1;
     position: relative;
@@ -246,7 +249,7 @@ export function generateWaybillHtml(data: WaybillHtmlData): string {
     transform: translateX(-50%);
     z-index: -1;
   }
-  .signature-img { height: 50px; }
+  .signature-img { height: 50px; opacity: 0.55; }
   .stamp-overlay {
     position: absolute;
     left: 50%;
@@ -254,7 +257,7 @@ export function generateWaybillHtml(data: WaybillHtmlData): string {
     transform: translateX(-50%);
     z-index: -1;
   }
-  .stamp-img { height: 115px; opacity: 0.75; }
+  .stamp-img { height: 115px; opacity: 0.45; }
   .caption {
     font-size: 7pt;
     font-style: italic;
@@ -262,6 +265,18 @@ export function generateWaybillHtml(data: WaybillHtmlData): string {
     margin-top: 4px;
   }
   .mp-label { margin-top: 16px; }
+  .poa-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-top: 12px;
+  }
+  .poa-line {
+    flex: 1;
+    border-bottom: 1px solid #000;
+    min-height: 16px;
+  }
+  .poa-line-full { margin-top: 8px; }
 
   @media print {
     body { -webkit-print-color-adjust: exact; }
@@ -378,9 +393,13 @@ export function generateWaybillHtml(data: WaybillHtmlData): string {
 
     <div class="signature-half">
       <div>По доверенности № ${escapeHtml(data.poaNumber || "—")} от «${escapeHtml(data.poaDate || "___")}» года</div>
-      <div style="margin-top:4px;">выданной ${escapeHtml(data.poaIssuedTo)}</div>
+      <div class="poa-row">
+        <span>выданной</span>
+        <span class="poa-line">${escapeHtml(data.poaIssuedTo)}</span>
+      </div>
+      <div class="poa-line poa-line-full"></div>
 
-      <div class="signature-field-row" style="margin-top: 40px;">
+      <div class="signature-field-row" style="margin-top: 24px;">
         <span>Запасы получил</span>
         <span class="signature-slot"></span>
       </div>
