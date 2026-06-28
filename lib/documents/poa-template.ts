@@ -134,7 +134,7 @@ export function generatePoaHtml(data: PoaHtmlData): string {
   .org-row {
     display: flex;
     align-items: baseline;
-    margin-bottom: 14px;
+    margin-bottom: 18px;
     gap: 6px;
   }
   .org-value {
@@ -149,25 +149,25 @@ export function generatePoaHtml(data: PoaHtmlData): string {
     text-align: center;
   }
 
-  .field-label { margin-bottom: 1px; }
+  .field-label { margin-bottom: 4px; }
   .field-line {
     border-bottom: 1px solid #000;
     min-height: 16px;
-    margin-bottom: 1px;
+    margin-bottom: 6px;
   }
   .caption {
     font-size: 7pt;
     font-style: italic;
     color: #444;
     text-align: center;
-    margin-bottom: 10px;
+    margin-bottom: 18px;
   }
 
   .bank-row {
     display: flex;
     align-items: baseline;
     gap: 4px;
-    margin-bottom: 1px;
+    margin-bottom: 6px;
   }
   .bank-value {
     flex: 1;
@@ -178,18 +178,18 @@ export function generatePoaHtml(data: PoaHtmlData): string {
     font-size: 13pt;
     font-weight: bold;
     text-align: center;
-    margin-top: 10px;
+    margin-top: 14px;
   }
   .date-issue {
     text-align: center;
-    margin-bottom: 12px;
+    margin-bottom: 18px;
   }
 
   .inline-row {
     display: flex;
     align-items: baseline;
     gap: 4px;
-    margin-bottom: 1px;
+    margin-bottom: 6px;
   }
   .inline-value {
     flex: 1;
@@ -198,7 +198,7 @@ export function generatePoaHtml(data: PoaHtmlData): string {
   .id-row {
     display: flex;
     gap: 12px;
-    margin-bottom: 1px;
+    margin-bottom: 6px;
   }
 
   table.main {
