@@ -161,7 +161,9 @@ export function InvoiceForm() {
       });
 
       if (!response.ok) {
-        setDownloadError("Не удалось сформировать счёт. Проверьте заполненные поля.");
+        const errorBody: { error?: unknown } | null = await response.json().catch(() => null);
+        const detail = typeof errorBody?.error === "string" ? errorBody.error : null;
+        setDownloadError(detail ? `Не удалось сформировать счёт: ${detail}` : "Не удалось сформировать счёт.");
         return;
       }
 

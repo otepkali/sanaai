@@ -1,29 +1,25 @@
-import { createElement, type ReactElement } from "react";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
-import { InvoiceDocument } from "@/lib/invoice/InvoiceDocument";
-import { ensureFontWarmedUp } from "@/lib/pdf-fonts";
+import chromium from "@sparticuz/chromium";
+import puppeteer from "puppeteer-core";
+import { generateInvoiceHtml } from "@/lib/invoice/invoice-template";
 import type { InvoiceData } from "@/lib/invoice/types";
 
-/** renderToBuffer типизирован строго на элемент <Document>, хотя на практике принимает
- *  любой компонент, который его рендерит — это известное ограничение типов @react-pdf/renderer. */
-function asDocumentElement(data: InvoiceData): ReactElement<DocumentProps> {
-  return createElement(InvoiceDocument, { data }) as unknown as ReactElement<DocumentProps>;
-}
+// Холодный старт Chromium + рендер страницы дольше обычного серверлес-роута.
+export const maxDuration = 30;
 
 const invoicePartySchema = z.object({
-  binIin: z.string().min(1, "Укажите БИН/ИИН"),
-  name: z.string().min(1, "Укажите наименование"),
+  binIin: z.string(),
+  name: z.string(),
   address: z.string().optional(),
 });
 
 const invoiceItemSchema = z.object({
   code: z.string(),
-  name: z.string().min(1, "Укажите наименование товара"),
-  qty: z.number().min(0, "Не может быть отрицательным"),
+  name: z.string(),
+  qty: z.number(),
   unit: z.string(),
-  price: z.number().min(0, "Не может быть отрицательной"),
+  price: z.number(),
 });
 
 const invoiceBeneficiarySchema = z.object({
@@ -37,17 +33,17 @@ const invoiceBeneficiarySchema = z.object({
 });
 
 const invoiceDataSchema = z.object({
-  number: z.string().min(1, "Укажите номер счёта"),
-  date: z.string().min(1, "Укажите дату"),
+  number: z.string(),
+  date: z.string(),
   beneficiary: invoiceBeneficiarySchema,
   supplier: invoicePartySchema,
   buyer: invoicePartySchema,
   contract: z.string(),
-  items: z.array(invoiceItemSchema).min(1, "Добавьте хотя бы одну позицию"),
+  items: z.array(invoiceItemSchema),
   isVatPayer: z.boolean(),
   vatMode: z.enum(["inclusive", "exclusive"]),
   showTaxBlock: z.boolean(),
-  taxableIncome: z.number().min(0).optional(),
+  taxableIncome: z.number().optional(),
 });
 
 export async function POST(request: Request) {
@@ -60,17 +56,41 @@ export async function POST(request: Request) {
 
   const parsed = invoiceDataSchema.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json({ error: z.treeifyError(parsed.error) }, { status: 400 });
+    console.error("Не прошла валидация данных счёта", z.treeifyError(parsed.error));
+    return NextResponse.json({ error: "Проверьте заполненные поля" }, { status: 400 });
   }
 
-  // Суммы пересчитываются на сервере внутри InvoiceDocument (lib/invoice/calc.ts) —
+  // Суммы пересчитываются на сервере внутри generateInvoiceHtml (lib/invoice/calc.ts) —
   // клиент передаёт только qty/price по позициям, никаких итогов с фронтенда.
   const data: InvoiceData = parsed.data;
+  const html = generateInvoiceHtml(data);
 
-  let buffer: Buffer;
+  let pdf: Buffer;
   try {
-    await ensureFontWarmedUp();
-    buffer = await renderToBuffer(asDocumentElement(data));
+    const isVercel = Boolean(process.env.VERCEL);
+    const executablePath = isVercel
+      ? await chromium.executablePath()
+      : process.env.LOCAL_CHROME_PATH || "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
+
+    const browser = await puppeteer.launch({
+      args: isVercel ? chromium.args : [],
+      executablePath,
+      headless: true,
+    });
+
+    try {
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: "load" });
+      const pdfArray = await page.pdf({
+        format: "A4",
+        landscape: false,
+        printBackground: true,
+        margin: { top: "0mm", bottom: "0mm", left: "0mm", right: "0mm" },
+      });
+      pdf = Buffer.from(pdfArray);
+    } finally {
+      await browser.close();
+    }
   } catch (error) {
     console.error("Не удалось сформировать PDF счёта", error);
     return NextResponse.json({ error: "Не удалось сформировать PDF" }, { status: 500 });
@@ -78,7 +98,7 @@ export async function POST(request: Request) {
 
   const safeNumber = data.number.replace(/[^a-zA-Z0-9_-]/g, "_") || "invoice";
 
-  return new NextResponse(new Uint8Array(buffer), {
+  return new NextResponse(new Uint8Array(pdf), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",

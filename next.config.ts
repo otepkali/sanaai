@@ -4,7 +4,8 @@ const nextConfig: NextConfig = {
   // Шрифт Arimo и логотип живут в public/, но рендер PDF идёт в серверлес-функции —
   // без этого Vercel может не включить эти файлы в трассировку для /api/invoice и /api/report.
   outputFileTracingIncludes: {
-    "/api/invoice": ["./public/fonts/**/*"],
+    // Счёт на оплату рендерится через Puppeteer+Chromium (как АВР/Доверенность/Накладная).
+    "/api/invoice": ["./public/fonts/**/*", "./node_modules/@sparticuz/chromium/**/*"],
     "/api/report": ["./public/fonts/**/*", "./public/logo.png"],
     "/api/documents/generate": ["./public/fonts/**/*"],
     // Puppeteer рендерит АВР через реальный Chromium — нужны и шрифты (встраиваются
