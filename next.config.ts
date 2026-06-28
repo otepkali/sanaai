@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
     // как base64 в HTML), и весь бинарник @sparticuz/chromium (brotli-архивы в bin/),
     // который автотрассировка Vercel иначе не подхватывает.
     "/api/documents/avr-pdf": ["./public/fonts/**/*", "./node_modules/@sparticuz/chromium/**/*"],
+    "/api/documents/poa-pdf": ["./public/fonts/**/*", "./node_modules/@sparticuz/chromium/**/*"],
     // pdfjs-dist подгружает pdf.worker.mjs и шрифты/cmaps по путям относительно
     // собственного node_modules — автотрассировка Vercel может их не найти.
     // @napi-rs/canvas подгружается pdfjs-dist через require() внутри try/catch —
