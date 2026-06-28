@@ -152,14 +152,17 @@ export function generateWaybillHtml(data: WaybillHtmlData): string {
     text-align: center;
   }
 
-  .title-row {
+  .doc-number-row {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+  }
+  .title {
+    font-size: 12pt;
+    font-weight: normal;
+    text-align: center;
     margin-bottom: 18px;
   }
-  .title { font-size: 12pt; font-weight: bold; flex: 1; }
   .doc-number-box { border: 1px solid #000; }
   .doc-number-box table { border-collapse: collapse; }
   .doc-number-box td {
@@ -211,9 +214,15 @@ export function generateWaybillHtml(data: WaybillHtmlData): string {
 
   .signature-grid {
     display: flex;
-    gap: 30px;
   }
   .signature-half { flex: 1; }
+  .signature-half:first-child {
+    border-right: 1px solid #000;
+    padding-right: 20px;
+  }
+  .signature-half:last-child {
+    padding-left: 20px;
+  }
   .signature-field-row {
     display: flex;
     align-items: flex-end;
@@ -279,8 +288,7 @@ export function generateWaybillHtml(data: WaybillHtmlData): string {
     <span class="bin-box">${escapeHtml(data.binIin)}</span>
   </div>
 
-  <div class="title-row">
-    <div class="title">НАКЛАДНАЯ НА ОТПУСК ЗАПАСОВ НА СТОРОНУ</div>
+  <div class="doc-number-row">
     <div class="doc-number-box">
       <table>
         <tr>
@@ -294,6 +302,8 @@ export function generateWaybillHtml(data: WaybillHtmlData): string {
       </table>
     </div>
   </div>
+
+  <div class="title">НАКЛАДНАЯ НА ОТПУСК ЗАПАСОВ НА СТОРОНУ</div>
 
   <table class="parties">
     <tr>
