@@ -15,7 +15,7 @@ export function AppHeader({ userEmail, children }: { userEmail: string; children
           </span>
           <nav className="hidden items-center gap-1 border-l border-border pl-3 md:flex">
             <Link
-              href="/"
+              href="/calculators"
               className="rounded-md px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-tint hover:text-text"
             >
               Калькуляторы

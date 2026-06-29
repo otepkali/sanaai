@@ -87,10 +87,23 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-12px)" },
+        },
+        blob: {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "33%": { transform: "translate(20px, -24px) scale(1.05)" },
+          "66%": { transform: "translate(-16px, 16px) scale(0.97)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        float: "float 4s ease-in-out infinite",
+        "float-delayed": "float 4s ease-in-out 1s infinite",
+        "float-slow": "float 6s ease-in-out infinite",
+        blob: "blob 9s ease-in-out infinite",
       },
     },
   },
