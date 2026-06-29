@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LandingPage } from "@/components/landing/LandingPage";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Sana AI — налоги и документы для ИП за 30 секунд",
@@ -12,6 +13,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
-  return <LandingPage />;
+export default async function Home() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  const userEmail = data.user?.email ?? "";
+
+  return <LandingPage userEmail={userEmail} />;
 }

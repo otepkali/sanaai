@@ -11,10 +11,10 @@ import { LandingFooter } from "@/components/landing/LandingFooter";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
-export function LandingPage() {
+export function LandingPage({ userEmail = "" }: { userEmail?: string }) {
   return (
     <div className={`${inter.className} flex min-h-full flex-1 flex-col bg-background`}>
-      <LandingNavbar />
+      <LandingNavbar userEmail={userEmail} />
       <LandingHero />
       <LandingHowItWorks />
       <LandingFeatures />

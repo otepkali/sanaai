@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UserMenu } from "@/components/UserMenu";
 
 const NAV_LINKS = [
   { href: "#features", label: "Возможности" },
@@ -12,7 +13,7 @@ const NAV_LINKS = [
   { href: "#faq", label: "Вопросы" },
 ];
 
-export function LandingNavbar() {
+export function LandingNavbar({ userEmail = "" }: { userEmail?: string }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -35,12 +36,23 @@ export function LandingNavbar() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary-bg">
-            <Link href="/login">Войти</Link>
-          </Button>
-          <Button asChild className="bg-primary text-white hover:bg-primary-hover">
-            <Link href="/register">Начать бесплатно</Link>
-          </Button>
+          {userEmail ? (
+            <>
+              <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary-bg">
+                <Link href="/calculators">Калькуляторы</Link>
+              </Button>
+              <UserMenu email={userEmail} />
+            </>
+          ) : (
+            <>
+              <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary-bg">
+                <Link href="/login">Войти</Link>
+              </Button>
+              <Button asChild className="bg-primary text-white hover:bg-primary-hover">
+                <Link href="/register">Начать бесплатно</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <button
@@ -67,12 +79,25 @@ export function LandingNavbar() {
               </a>
             ))}
             <div className="mt-2 flex flex-col gap-2 px-3">
-              <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary-bg">
-                <Link href="/login">Войти</Link>
-              </Button>
-              <Button asChild className="bg-primary text-white hover:bg-primary-hover">
-                <Link href="/register">Начать бесплатно</Link>
-              </Button>
+              {userEmail ? (
+                <>
+                  <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary-bg">
+                    <Link href="/calculators" onClick={() => setIsMenuOpen(false)}>
+                      Калькуляторы
+                    </Link>
+                  </Button>
+                  <UserMenu email={userEmail} />
+                </>
+              ) : (
+                <>
+                  <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary-bg">
+                    <Link href="/login">Войти</Link>
+                  </Button>
+                  <Button asChild className="bg-primary text-white hover:bg-primary-hover">
+                    <Link href="/register">Начать бесплатно</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </nav>
         </div>
