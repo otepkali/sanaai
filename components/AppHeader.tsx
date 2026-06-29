@@ -9,7 +9,9 @@ export function AppHeader({ userEmail, children }: { userEmail: string; children
     <header className="border-b border-border bg-gradient-to-b from-white to-surface-tint">
       <div className="container flex items-center justify-between py-6">
         <div className="flex items-center gap-3">
-          <Image src="/logo.png" alt="Sana Ai" width={160} height={60} className="h-9 w-auto" priority />
+          <Link href="/" aria-label="Sana AI — на главную">
+            <Image src="/logo.png" alt="Sana Ai" width={160} height={60} className="h-9 w-auto" priority />
+          </Link>
           <span className="hidden border-l border-border pl-3 text-sm text-text-muted sm:block">
             Налоговый калькулятор РК
           </span>

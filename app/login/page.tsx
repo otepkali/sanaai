@@ -40,7 +40,9 @@ export default function LoginPage() {
     <div className="flex min-h-full flex-1 items-center justify-center bg-gradient-to-b from-white to-surface-tint px-4 py-12">
       <Card className="w-full max-w-sm rounded-2xl border-border shadow-soft">
         <CardHeader className="items-center text-center">
-          <Image src="/logo.png" alt="Sana Ai" width={160} height={60} className="mb-2 h-10 w-auto" />
+          <Link href="/" aria-label="Sana AI — на главную">
+            <Image src="/logo.png" alt="Sana Ai" width={160} height={60} className="mb-2 h-10 w-auto" />
+          </Link>
           <CardTitle>Вход</CardTitle>
           <CardDescription>Налоговый калькулятор Казахстана 2026</CardDescription>
         </CardHeader>
