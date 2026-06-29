@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-// "/" — лендинг (неавторизованным) либо редирект в /calculators (авторизованным).
+// "/" — лендинг, открыт всем независимо от авторизации.
 // "/calculators" — калькуляторы, открыты всем без регистрации.
 // Всё остальное (/documents, /accounting и т.д.) — только для авторизованных.
 const PUBLIC_PATHS = ["/login", "/register", "/calculators"];
 // Страницы, с которых авторизованного пользователя сразу уводят в его рабочее пространство.
-const REDIRECT_IF_AUTHED_PATHS = ["/login", "/register", "/"];
+const REDIRECT_IF_AUTHED_PATHS = ["/login", "/register"];
 
 export async function proxy(request: NextRequest) {
   const { response, user } = await updateSession(request);
