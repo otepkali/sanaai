@@ -20,6 +20,25 @@ export interface CompanyRequisites {
   /** Путь в бакете Storage company-files, не публичный URL */
   signaturePath: string | null;
   stampPath: string | null;
+  /** Режим налогообложения, например "Розничный налог" */
+  regime: string;
+  /** Код бенефициара (КБе) */
+  kbe: string;
+  isVatPayer: boolean;
+  /** Статус по единому платежу, например "Неплательщик ЕП" */
+  singlePaymentStatus: string;
+  logoPath: string | null;
+  ownerFullName: string;
+  residencyCountry: string;
+  ownerMonthlyIncome: number | null;
+  ownerStatuses: string;
+  taxAuthorityRegistration: string;
+  taxAuthorityResidence: string;
+  akimatBin: string;
+  registrationCertificateNumber: string;
+  registrationCertificateDate: string | null;
+  currency: string;
+  stockControlEnabled: boolean;
 }
 
 export const EMPTY_REQUISITES: CompanyRequisites = {
@@ -34,7 +53,82 @@ export const EMPTY_REQUISITES: CompanyRequisites = {
   bik: "",
   signaturePath: null,
   stampPath: null,
+  regime: "",
+  kbe: "",
+  isVatPayer: false,
+  singlePaymentStatus: "Неплательщик ЕП",
+  logoPath: null,
+  ownerFullName: "",
+  residencyCountry: "Казахстан",
+  ownerMonthlyIncome: null,
+  ownerStatuses: "",
+  taxAuthorityRegistration: "",
+  taxAuthorityResidence: "",
+  akimatBin: "",
+  registrationCertificateNumber: "",
+  registrationCertificateDate: null,
+  currency: "KZT",
+  stockControlEnabled: false,
 };
+
+// ---------- Дополнительные адреса, счета, склады, кассы, подписанты ----------
+
+export type CompanyAddressType = "legal" | "actual" | "other";
+
+export interface CompanyAddress {
+  id: string;
+  type: CompanyAddressType;
+  address: string;
+  sortOrder: number;
+}
+
+export interface CompanyBankAccount {
+  id: string;
+  label: string;
+  accountNumber: string;
+  currency: string;
+  bik: string;
+  bankName: string;
+  sortOrder: number;
+}
+
+export interface CompanyWarehouse {
+  id: string;
+  name: string;
+  address: string;
+  sortOrder: number;
+}
+
+export interface CompanyCashRegister {
+  id: string;
+  name: string;
+  cashierName: string;
+  address: string;
+  sortOrder: number;
+}
+
+export type CompanySignerRole =
+  | "individual_entrepreneur"
+  | "chief_accountant"
+  | "goods_release"
+  | "invoice_for_director"
+  | "invoice_for_accountant";
+
+export const SIGNER_ROLE_LABELS: Record<CompanySignerRole, string> = {
+  individual_entrepreneur: "Индивидуальный предприниматель",
+  chief_accountant: "Главный бухгалтер",
+  goods_release: "Отпуск товаров",
+  invoice_for_director: "Подписывающие С/Ф за руководителя",
+  invoice_for_accountant: "Подписывающие С/Ф за главного бухгалтера",
+};
+
+export interface CompanySigner {
+  id: string;
+  role: CompanySignerRole;
+  fullName: string;
+  signaturePath: string | null;
+  sortOrder: number;
+}
 
 // ---------- Форма Р-1: Акт выполненных работ (АВР) ----------
 

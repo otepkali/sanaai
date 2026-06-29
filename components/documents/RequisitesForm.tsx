@@ -1,92 +1,21 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
-import { Loader2, Upload } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { useUser } from "@/lib/hooks/useUser";
-import {
-  getRequisites,
-  upsertRequisites,
-  uploadCompanyFile,
-  getCompanyFileSignedUrl,
-} from "@/lib/supabase/requisites";
+import { getRequisites, upsertRequisites, uploadCompanyFile } from "@/lib/supabase/requisites";
 import { EMPTY_REQUISITES, type CompanyRequisites } from "@/lib/documents/types";
-
-function FileSlot({
-  label,
-  path,
-  onUpload,
-  isUploading,
-  error,
-}: {
-  label: string;
-  path: string | null;
-  onUpload: (file: File) => void;
-  isUploading: boolean;
-  error: string | null;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewError, setPreviewError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!path) {
-      Promise.resolve().then(() => {
-        setPreviewUrl(null);
-        setPreviewError(null);
-      });
-      return;
-    }
-    getCompanyFileSignedUrl(path).then((url) => {
-      setPreviewUrl(url);
-      setPreviewError(url ? null : "Не удалось получить ссылку на загруженный файл");
-    });
-  }, [path]);
-
-  return (
-    <div className="space-y-2">
-      <Label className="text-sm text-text-muted">{label}</Label>
-      <div className="flex items-center gap-4 rounded-xl border border-border p-3">
-        <div className="flex h-16 w-32 items-center justify-center overflow-hidden rounded-lg bg-surface-tint">
-          {previewUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- предпросмотр PNG из приватного Storage по подписанной ссылке
-            <img src={previewUrl} alt={label} className="h-full w-full object-contain" />
-          ) : (
-            <span className="text-xs text-text-muted">Нет файла</span>
-          )}
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          onClick={() => inputRef.current?.click()}
-          disabled={isUploading}
-        >
-          {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          Загрузить PNG
-        </Button>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/png"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) onUpload(file);
-            e.target.value = "";
-          }}
-        />
-      </div>
-      {error ? <p className="text-xs text-danger">{error}</p> : null}
-      {!error && previewError ? <p className="text-xs text-danger">{previewError}</p> : null}
-    </div>
-  );
-}
+import { CompanyInfoCard } from "@/components/requisites/CompanyInfoCard";
+import { OwnerInfoCard } from "@/components/requisites/OwnerInfoCard";
+import { LeadershipCard } from "@/components/requisites/LeadershipCard";
+import { AddressesCard } from "@/components/requisites/AddressesCard";
+import { TaxAuthorityCard } from "@/components/requisites/TaxAuthorityCard";
+import { RegistrationDocumentCard } from "@/components/requisites/RegistrationDocumentCard";
+import { BankAccountsCard } from "@/components/requisites/BankAccountsCard";
+import { WarehousesCard } from "@/components/requisites/WarehousesCard";
+import { CashRegistersCard } from "@/components/requisites/CashRegistersCard";
+import { SignersSection } from "@/components/requisites/SignersSection";
 
 export function RequisitesForm() {
   const { user } = useUser();
@@ -94,10 +23,11 @@ export function RequisitesForm() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [uploadingKind, setUploadingKind] = useState<"signature" | "stamp" | null>(null);
-  const [uploadErrors, setUploadErrors] = useState<{ signature: string | null; stamp: string | null }>({
+  const [uploadingKind, setUploadingKind] = useState<"signature" | "stamp" | "logo" | null>(null);
+  const [uploadErrors, setUploadErrors] = useState<{ signature: string | null; stamp: string | null; logo: string | null }>({
     signature: null,
     stamp: null,
+    logo: null,
   });
 
   useEffect(() => {
@@ -112,6 +42,13 @@ export function RequisitesForm() {
 
   function patch(fields: Partial<CompanyRequisites>) {
     setRequisites((prev) => ({ ...prev, ...fields }));
+  }
+
+  async function persistNow(fields: Partial<CompanyRequisites>) {
+    if (!user) return;
+    const next = { ...requisites, ...fields };
+    setRequisites(next);
+    await upsertRequisites(user.id, next);
   }
 
   async function handleSave() {
@@ -129,17 +66,19 @@ export function RequisitesForm() {
     }
   }
 
-  async function handleUpload(kind: "signature" | "stamp", file: File) {
+  async function handleUpload(kind: "signature" | "stamp" | "logo", file: File) {
     if (!user) return;
     setUploadingKind(kind);
     setUploadErrors((prev) => ({ ...prev, [kind]: null }));
     try {
       const path = await uploadCompanyFile(user.id, kind, file);
-      const nextRequisites = { ...requisites, ...(kind === "signature" ? { signaturePath: path } : { stampPath: path }) };
-      setRequisites(nextRequisites);
-      // Сохраняем реквизиты сразу — иначе путь к файлу теряется при перезагрузке,
-      // если пользователь не нажмёт «Сохранить» отдельно после загрузки.
-      await upsertRequisites(user.id, nextRequisites);
+      if (kind === "signature") {
+        await persistNow({ signaturePath: path });
+      } else if (kind === "stamp") {
+        await persistNow({ stampPath: path });
+      } else {
+        await persistNow({ logoPath: path });
+      }
     } catch (error) {
       console.error("Не удалось загрузить файл", error);
       const description = error instanceof Error ? error.message : "неизвестная ошибка";
@@ -148,15 +87,6 @@ export function RequisitesForm() {
       setUploadingKind(null);
     }
   }
-
-  const companyNameId = useId();
-  const binIinId = useId();
-  const directorNameId = useId();
-  const accountantNameId = useId();
-  const addressId = useId();
-  const bankNameId = useId();
-  const iikId = useId();
-  const bikId = useId();
 
   if (isLoading) {
     return (
@@ -167,142 +97,36 @@ export function RequisitesForm() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <Card className="rounded-2xl border-border shadow-soft">
-        <CardHeader>
-          <CardTitle>Реквизиты компании</CardTitle>
-          <CardDescription>
-            Подставляются автоматически во все бухгалтерские документы — заполните один раз
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
-            <div>
-              <Label htmlFor="is-ip" className="text-sm">
-                Индивидуальный предприниматель
-              </Label>
-              <p className="text-xs text-text-muted">Выключено — значит ТОО</p>
-            </div>
-            <Switch
-              id="is-ip"
-              checked={requisites.isIndividualEntrepreneur}
-              onCheckedChange={(v) => patch({ isIndividualEntrepreneur: v })}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor={companyNameId} className="text-sm text-text-muted">
-              Наименование организации
-            </Label>
-            <Input
-              id={companyNameId}
-              value={requisites.companyName}
-              onChange={(e) => patch({ companyName: e.target.value })}
-              placeholder='ТОО "Компания"'
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor={binIinId} className="text-sm text-text-muted">
-              БИН / ИИН
-            </Label>
-            <Input
-              id={binIinId}
-              value={requisites.binIin}
-              onChange={(e) => patch({ binIin: e.target.value })}
-              className="font-tabular"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor={directorNameId} className="text-sm text-text-muted">
-                Руководитель
-              </Label>
-              <Input
-                id={directorNameId}
-                value={requisites.directorName}
-                onChange={(e) => patch({ directorName: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={accountantNameId} className="text-sm text-text-muted">
-                Главный бухгалтер
-              </Label>
-              <Input
-                id={accountantNameId}
-                value={requisites.accountantName}
-                onChange={(e) => patch({ accountantName: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor={addressId} className="text-sm text-text-muted">
-              Адрес
-            </Label>
-            <Input
-              id={addressId}
-              value={requisites.address}
-              onChange={(e) => patch({ address: e.target.value })}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor={bankNameId} className="text-sm text-text-muted">
-              Банк
-            </Label>
-            <Input
-              id={bankNameId}
-              value={requisites.bankName}
-              onChange={(e) => patch({ bankName: e.target.value })}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor={iikId} className="text-sm text-text-muted">
-                ИИК
-              </Label>
-              <Input
-                id={iikId}
-                value={requisites.iik}
-                onChange={(e) => patch({ iik: e.target.value })}
-                className="font-tabular"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={bikId} className="text-sm text-text-muted">
-                БИК
-              </Label>
-              <Input id={bikId} value={requisites.bik} onChange={(e) => patch({ bik: e.target.value })} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-2xl border-border shadow-soft">
-        <CardHeader>
-          <CardTitle className="text-lg">Подпись и печать</CardTitle>
-          <CardDescription>PNG с прозрачным фоном — будут вставлены в документы</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <FileSlot
-            label="Подпись руководителя"
-            path={requisites.signaturePath}
-            onUpload={(file) => handleUpload("signature", file)}
-            isUploading={uploadingKind === "signature"}
-            error={uploadErrors.signature}
-          />
-          <FileSlot
-            label="Печать организации"
-            path={requisites.stampPath}
-            onUpload={(file) => handleUpload("stamp", file)}
-            error={uploadErrors.stamp}
-            isUploading={uploadingKind === "stamp"}
-          />
-        </CardContent>
-      </Card>
+    <div className="mx-auto max-w-5xl space-y-8">
+      <div className="grid gap-6 sm:grid-cols-2">
+        <CompanyInfoCard
+          requisites={requisites}
+          onChange={patch}
+          onUploadLogo={(file) => handleUpload("logo", file)}
+          isUploadingLogo={uploadingKind === "logo"}
+          logoError={uploadErrors.logo}
+        />
+        {requisites.isIndividualEntrepreneur ? <OwnerInfoCard requisites={requisites} onChange={patch} /> : null}
+        <LeadershipCard
+          requisites={requisites}
+          onChange={patch}
+          onUploadSignature={(file) => handleUpload("signature", file)}
+          isUploadingSignature={uploadingKind === "signature"}
+          signatureError={uploadErrors.signature}
+        />
+        <AddressesCard />
+        <TaxAuthorityCard requisites={requisites} onChange={patch} />
+        <RegistrationDocumentCard
+          requisites={requisites}
+          onChange={patch}
+          onDelete={() =>
+            persistNow({ registrationCertificateNumber: "", registrationCertificateDate: null })
+          }
+        />
+        <BankAccountsCard requisites={requisites} onChange={patch} />
+        <WarehousesCard requisites={requisites} onChange={patch} />
+        <CashRegistersCard />
+      </div>
 
       <div className="flex items-center gap-3">
         <Button onClick={handleSave} disabled={isSaving} className="gap-2">
@@ -311,6 +135,14 @@ export function RequisitesForm() {
         </Button>
         {saveMessage ? <span className="text-sm text-text-muted">{saveMessage}</span> : null}
       </div>
+
+      <SignersSection
+        requisites={requisites}
+        onUploadStamp={(file) => handleUpload("stamp", file)}
+        onDeleteStamp={() => persistNow({ stampPath: null })}
+        isUploadingStamp={uploadingKind === "stamp"}
+        stampError={uploadErrors.stamp}
+      />
     </div>
   );
 }

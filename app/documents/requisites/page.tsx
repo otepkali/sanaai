@@ -12,11 +12,11 @@ export default async function RequisitesPage() {
     <div className="flex min-h-full flex-1 flex-col">
       <AppHeader userEmail={userEmail}>
         <h1 className="max-w-2xl text-3xl font-semibold tracking-tight text-text sm:text-4xl">
-          Реквизиты компании
+          Мои реквизиты
         </h1>
         <p className="mt-3 max-w-xl text-text-muted">
-          Заполняются один раз и автоматически подставляются во все бухгалтерские документы —
-          АВР, доверенности, накладные и расчётные ведомости.
+          Организация, адреса, счета, склады, кассы и подписанты — заполняются один раз и
+          автоматически подставляются во все бухгалтерские документы.
         </p>
       </AppHeader>
 
