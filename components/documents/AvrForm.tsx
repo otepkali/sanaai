@@ -184,9 +184,9 @@ export function AvrForm() {
                 </Label>
                 <Input
                   id={periodFromId}
+                  type="date"
                   value={periodFrom}
                   onChange={(e) => setPeriodFrom(e.target.value)}
-                  placeholder="01.06.2026"
                 />
               </div>
               <div className="space-y-1.5">
@@ -195,9 +195,9 @@ export function AvrForm() {
                 </Label>
                 <Input
                   id={periodToId}
+                  type="date"
                   value={periodTo}
                   onChange={(e) => setPeriodTo(e.target.value)}
-                  placeholder="30.06.2026"
                 />
               </div>
             </div>
@@ -250,9 +250,9 @@ export function AvrForm() {
                 </Label>
                 <Input
                   id={contractDateId}
+                  type="date"
                   value={contractDate}
                   onChange={(e) => setContractDate(e.target.value)}
-                  placeholder="01.01.2026"
                 />
               </div>
             </div>

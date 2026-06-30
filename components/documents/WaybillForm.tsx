@@ -208,7 +208,7 @@ export function WaybillForm() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm text-text-muted">Дата</Label>
-                <Input value={poaDate} onChange={(e) => setPoaDate(e.target.value)} />
+                <Input type="date" value={poaDate} onChange={(e) => setPoaDate(e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm text-text-muted">Выдана</Label>

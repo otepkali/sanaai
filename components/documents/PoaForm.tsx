@@ -204,7 +204,7 @@ export function PoaForm() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm text-text-muted">Дата выдачи</Label>
-                <Input value={idDocumentDate} onChange={(e) => setIdDocumentDate(e.target.value)} />
+                <Input type="date" value={idDocumentDate} onChange={(e) => setIdDocumentDate(e.target.value)} />
               </div>
             </div>
             <div className="space-y-1.5">
