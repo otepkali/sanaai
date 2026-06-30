@@ -28,6 +28,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api/invoice|api/report|api/accounting/analyze|api/documents/generate|api/documents/avr-pdf|api/documents/poa-pdf|api/documents/waybill-pdf|_next/static|_next/image|favicon.ico|logo.png|hero-woman.png|landing|fonts).*)",
+    "/((?!api/invoice|api/report|api/accounting/analyze|api/documents/generate|api/documents/avr-pdf|api/documents/poa-pdf|api/documents/waybill-pdf|api/esf/download-xml|api/esf/send|_next/static|_next/image|favicon.ico|logo.png|hero-woman.png|landing|fonts).*)",
   ],
 };

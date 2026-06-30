@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useState, useSyncExternalStore } from "react";
 import { Download, Loader2, Plus, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -27,6 +27,8 @@ import { MoneyInput } from "@/components/calculators/MoneyInput";
 import { calculateInvoiceTotals, formatMoney } from "@/lib/invoice/calc";
 import type { InvoiceData, InvoiceItem, VatMode } from "@/lib/invoice/types";
 import { formatTenge } from "@/lib/format";
+import { useUser } from "@/lib/hooks/useUser";
+import { getRequisites } from "@/lib/supabase/requisites";
 
 interface EditableItem extends InvoiceItem {
   id: number;
@@ -94,6 +96,28 @@ export function InvoiceForm() {
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  const { user } = useUser();
+  useEffect(() => {
+    if (!user) return;
+    getRequisites()
+      .then((requisites) => {
+        if (!requisites) return;
+        Promise.resolve().then(() => {
+          if (requisites.companyName) setSupplierName(requisites.companyName);
+          if (requisites.binIin) setSupplierBin(requisites.binIin);
+          if (requisites.address) setSupplierAddress(requisites.address);
+
+          if (requisites.companyName) setBeneficiaryName(requisites.companyName);
+          if (requisites.binIin) setBeneficiaryIin(requisites.binIin);
+          if (requisites.iik) setBeneficiaryIik(requisites.iik);
+          if (requisites.kbe) setBeneficiaryKbe(requisites.kbe);
+          if (requisites.bankName) setBeneficiaryBankName(requisites.bankName);
+          if (requisites.bik) setBeneficiaryBik(requisites.bik);
+        });
+      })
+      .catch((error) => console.error("Не удалось загрузить реквизиты", error));
+  }, [user]);
 
   const numberId = useId();
   const dateId = useId();

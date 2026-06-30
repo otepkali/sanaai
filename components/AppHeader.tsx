@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/UserMenu";
+import { EsfNavDropdown } from "@/components/EsfNavDropdown";
 
 export function AppHeader({ userEmail, children }: { userEmail: string; children: ReactNode }) {
   return (
@@ -28,6 +29,7 @@ export function AppHeader({ userEmail, children }: { userEmail: string; children
             >
               Учёт и ведомости
             </Link>
+            <EsfNavDropdown />
             <Link
               href="/documents"
               className="rounded-md px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-tint hover:text-text"
