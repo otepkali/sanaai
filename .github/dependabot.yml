@@ -1,0 +1,26 @@
+# Автоматические PR с обновлениями зависимостей (в том числе исправлениями уязвимостей).
+# Раз в неделю, обновления сгруппированы в один PR, чтобы не было шума.
+version: 2
+updates:
+- package-ecosystem: npm
+  directory: /
+  schedule:
+    interval: weekly
+    day: monday
+    timezone: Asia/Almaty
+  open-pull-requests-limit: 3
+  groups:
+    all-dependencies:
+      patterns:
+      - '*'
+      update-types:
+      - minor
+      - patch
+- package-ecosystem: github-actions
+  directory: /
+  schedule:
+    interval: weekly
+  groups:
+    actions:
+      patterns:
+      - '*'
