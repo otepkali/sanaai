@@ -119,7 +119,7 @@ export function HistorySidebar({ onRestore, refreshSignal }: HistorySidebarProps
           <p className="text-xs text-text-muted">
             История расчётов доступна по подписке.{" "}
             <Link href="/billing" className="text-primary underline">
-              Попробовать 7 дней бесплатно
+              Попробовать 3 дня бесплатно
             </Link>
           </p>
         ) : isLoading ? (

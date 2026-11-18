@@ -13,7 +13,13 @@ const NAV_LINKS = [
   { href: "#faq", label: "Вопросы" },
 ];
 
-export function LandingNavbar({ userEmail = "" }: { userEmail?: string }) {
+export function LandingNavbar({
+  userEmail = "",
+  hasSubscription = false,
+}: {
+  userEmail?: string;
+  hasSubscription?: boolean;
+}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -41,6 +47,15 @@ export function LandingNavbar({ userEmail = "" }: { userEmail?: string }) {
               <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary-bg">
                 <Link href="/calculators">Калькуляторы</Link>
               </Button>
+              {hasSubscription ? (
+                <Button asChild className="bg-primary text-white hover:bg-primary-hover">
+                  <Link href="/documents">Документы</Link>
+                </Button>
+              ) : (
+                <Button asChild className="bg-primary text-white hover:bg-primary-hover">
+                  <Link href="/billing">Оформить подписку</Link>
+                </Button>
+              )}
               <UserMenu email={userEmail} />
             </>
           ) : (
@@ -84,6 +99,11 @@ export function LandingNavbar({ userEmail = "" }: { userEmail?: string }) {
                   <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary-bg">
                     <Link href="/calculators" onClick={() => setIsMenuOpen(false)}>
                       Калькуляторы
+                    </Link>
+                  </Button>
+                  <Button asChild className="bg-primary text-white hover:bg-primary-hover">
+                    <Link href={hasSubscription ? "/documents" : "/billing"} onClick={() => setIsMenuOpen(false)}>
+                      {hasSubscription ? "Документы" : "Оформить подписку"}
                     </Link>
                   </Button>
                   <UserMenu email={userEmail} />

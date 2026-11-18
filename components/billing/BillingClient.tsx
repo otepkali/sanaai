@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useSubscription } from "@/lib/hooks/useSubscription";
-import { PLAN, type SubscriptionRow } from "@/lib/billing/subscription";
+import { PLAN, formatDays, type SubscriptionRow } from "@/lib/billing/subscription";
 import { formatTenge } from "@/lib/format";
 
 const FEATURES = [
@@ -113,7 +113,7 @@ export function BillingClient() {
         <CardHeader>
           <CardTitle className="text-lg">{PLAN.name}</CardTitle>
           <CardDescription>
-            Первые {PLAN.trialDays} дней бесплатно, дальше {formatTenge(PLAN.priceKzt)} в месяц. Отменить можно в любой
+            Первые {formatDays(PLAN.trialDays)} бесплатно, дальше {formatTenge(PLAN.priceKzt)} в месяц. Отменить можно в любой
             момент.
           </CardDescription>
         </CardHeader>
@@ -136,7 +136,7 @@ export function BillingClient() {
           {!subscription ? (
             <Button className="mt-6 w-full gap-2" disabled={isBusy} onClick={() => callRpc("start_trial")}>
               {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Начать {PLAN.trialDays} дней бесплатно
+              Начать {formatDays(PLAN.trialDays)} бесплатно
             </Button>
           ) : !hasAccess ? (
             <div className="mt-6 rounded-xl border border-border bg-surface-tint p-4 text-sm text-text-muted">

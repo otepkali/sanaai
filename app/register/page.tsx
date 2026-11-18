@@ -25,7 +25,12 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     const supabase = createClient();
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      // Ссылка из письма вернёт пользователя на тот же домен, где он регистрировался
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
 
     if (signUpError) {
       setError(signUpError.message || "Не удалось зарегистрироваться.");

@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import { LandingNavbar } from "@/components/landing/LandingNavbar";
 import { LandingHero } from "@/components/landing/LandingHero";
+import { LandingMemberSections } from "@/components/landing/LandingMemberSections";
 import { LandingHowItWorks } from "@/components/landing/LandingHowItWorks";
 import { LandingFeatures } from "@/components/landing/LandingFeatures";
 import { LandingAudience } from "@/components/landing/LandingAudience";
@@ -11,10 +12,18 @@ import { LandingFooter } from "@/components/landing/LandingFooter";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
-export function LandingPage({ userEmail = "" }: { userEmail?: string }) {
+export function LandingPage({
+  userEmail = "",
+  hasSubscription = false,
+}: {
+  userEmail?: string;
+  /** Есть активная подписка — сразу показываем быстрый доступ к разделам */
+  hasSubscription?: boolean;
+}) {
   return (
     <div className={`${inter.className} flex min-h-full flex-1 flex-col bg-background`}>
-      <LandingNavbar userEmail={userEmail} />
+      <LandingNavbar userEmail={userEmail} hasSubscription={hasSubscription} />
+      {hasSubscription ? <LandingMemberSections /> : null}
       <LandingHero />
       <LandingHowItWorks />
       <LandingFeatures />

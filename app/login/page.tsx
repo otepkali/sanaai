@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    // /auth/callback уводит сюда с ?error=confirm, если ссылка из письма не сработала
+    if (new URLSearchParams(window.location.search).get("error") === "confirm") {
+      Promise.resolve().then(() =>
+        setError("Ссылка подтверждения устарела или уже использована. Попробуйте войти или зарегистрируйтесь заново.")
+      );
+    }
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

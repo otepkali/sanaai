@@ -4,7 +4,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 // "/" — лендинг, открыт всем независимо от авторизации.
 // "/calculators" — калькуляторы, открыты всем без регистрации.
 // Всё остальное (/documents, /accounting и т.д.) — только для авторизованных.
-const PUBLIC_PATHS = ["/login", "/register", "/calculators"];
+const PUBLIC_PATHS = ["/login", "/register", "/calculators", "/auth/callback"];
 // Страницы, с которых авторизованного пользователя сразу уводят в его рабочее пространство.
 const REDIRECT_IF_AUTHED_PATHS = ["/login", "/register"];
 

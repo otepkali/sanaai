@@ -19,8 +19,8 @@ const PLANS = [
   {
     name: "Подписка",
     price: "5 000 ₸ / мес",
-    description: "Для ТОО и ИП — одна цена. Первые 7 дней бесплатно",
-    cta: { label: "Попробовать 7 дней бесплатно", href: "/register" },
+    description: "Для ТОО и ИП — одна цена. Первые 3 дня бесплатно",
+    cta: { label: "Попробовать 3 дня бесплатно", href: "/register" },
     highlighted: true,
     features: [
       "Всё из тарифа «Без регистрации»",

@@ -2,8 +2,17 @@
 export const PLAN = {
   name: "Sana AI",
   priceKzt: 5000,
-  trialDays: 7,
+  trialDays: 3,
 } as const;
+
+/** «3 дня», «5 дней», «1 день» */
+export function formatDays(days: number): string {
+  const mod10 = days % 10;
+  const mod100 = days % 100;
+  const word =
+    mod10 === 1 && mod100 !== 11 ? "день" : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14) ? "дня" : "дней";
+  return `${days} ${word}`;
+}
 
 export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled";
 

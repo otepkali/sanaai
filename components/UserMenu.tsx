@@ -1,14 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, CreditCard, FileText, LogOut } from "lucide-react";
+import { ChevronDown, CreditCard, FileText, LogOut, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export function UserMenu({ email }: { email: string }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    // Только чтобы показать пункт меню — сам доступ к /admin проверяется на сервере.
+    createClient()
+      .rpc("is_admin")
+      .then(({ data }) => setIsAdmin(data === true));
+  }, []);
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -47,6 +55,16 @@ export function UserMenu({ email }: { email: string }) {
             <CreditCard className="h-4 w-4" />
             Подписка
           </Link>
+          {isAdmin ? (
+            <Link
+              href="/admin"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text transition-colors hover:bg-surface-tint"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Админка
+            </Link>
+          ) : null}
           <button
             type="button"
             onClick={handleSignOut}
