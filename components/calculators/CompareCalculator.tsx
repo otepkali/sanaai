@@ -8,7 +8,7 @@ import { ResultBreakdown, type BreakdownRow } from "@/components/ResultBreakdown
 import { compareTaxRegimes, type CompareInput } from "@/lib/compare";
 import { compareFormSchema } from "@/lib/schemas";
 import { formatPercent, formatTenge } from "@/lib/format";
-import { useAutosaveCalculation } from "@/lib/hooks/useAutosaveCalculation";
+import { useSaveCalculation } from "@/lib/hooks/useSaveCalculation";
 import type { CalculationRow } from "@/lib/supabase/calculations";
 import { DownloadPdfButton } from "@/components/DownloadPdfButton";
 import type { ReportData } from "@/lib/reports/types";
@@ -35,11 +35,11 @@ export function CompareCalculator({ initialData, onSaved }: CompareCalculatorPro
     [annualRevenue, annualExpenses, annualPayroll]
   );
 
-  useAutosaveCalculation(
+  const saveCalculation = useSaveCalculation(
     "comparison",
     { annualRevenue, annualExpenses, annualPayroll },
     result,
-    { initialId: initialData?.id, onSaved }
+    { onSaved }
   );
 
   const simplifiedRows: BreakdownRow[] = [
@@ -155,7 +155,7 @@ export function CompareCalculator({ initialData, onSaved }: CompareCalculatorPro
         />
       </div>
 
-      <DownloadPdfButton data={reportData} />
+      <DownloadPdfButton data={reportData} onDownloaded={saveCalculation} />
     </div>
   );
 }

@@ -5,7 +5,14 @@ import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ReportData } from "@/lib/reports/types";
 
-export function DownloadPdfButton({ data }: { data: ReportData }) {
+export function DownloadPdfButton({
+  data,
+  onDownloaded,
+}: {
+  data: ReportData;
+  /** Вызывается после успешного скачивания (например, чтобы сохранить расчёт в историю) */
+  onDownloaded?: () => void | Promise<void>;
+}) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +43,7 @@ export function DownloadPdfButton({ data }: { data: ReportData }) {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
+      void onDownloaded?.();
     } catch {
       setError("Не удалось связаться с сервером. Попробуйте ещё раз.");
     } finally {

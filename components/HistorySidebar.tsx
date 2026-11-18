@@ -46,7 +46,7 @@ export function HistorySidebar({ onRestore, refreshSignal }: HistorySidebarProps
 
   const reload = useCallback(() => {
     setIsLoading(true);
-    const fetchPromise = user ? listCalculations() : Promise.resolve<CalculationRow[]>([]);
+    const fetchPromise = user ? listCalculations(user.id) : Promise.resolve<CalculationRow[]>([]);
     fetchPromise
       .then(setRows)
       .catch((error) => console.error("Не удалось загрузить историю расчётов", error))

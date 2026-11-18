@@ -12,11 +12,12 @@ export interface CalculationRow {
   created_at: string;
 }
 
-export async function listCalculations(): Promise<CalculationRow[]> {
+export async function listCalculations(userId: string): Promise<CalculationRow[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("calculations")
     .select("*")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;

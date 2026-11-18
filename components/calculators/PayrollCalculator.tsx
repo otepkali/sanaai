@@ -41,7 +41,7 @@ import {
   getWorkingNorm,
   type WorkSchedule,
 } from "@/lib/working-calendar-2026";
-import { useAutosaveCalculation } from "@/lib/hooks/useAutosaveCalculation";
+import { useSaveCalculation } from "@/lib/hooks/useSaveCalculation";
 import type { CalculationRow } from "@/lib/supabase/calculations";
 import { DownloadPdfButton } from "@/components/DownloadPdfButton";
 import type { ReportData } from "@/lib/reports/types";
@@ -323,10 +323,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
   const savedResult =
     subMode === "single" ? result : subMode === "multiple" ? { employeeResults, multipleTotals } : gphResult;
 
-  useAutosaveCalculation("fot", savedInput, savedResult, {
-    initialId: initialData?.id,
-    onSaved,
-  });
+  const saveCalculation = useSaveCalculation("fot", savedInput, savedResult, { onSaved });
 
   const reportData: ReportData =
     subMode === "single"
@@ -905,7 +902,7 @@ export function PayrollCalculator({ initialData, onSaved }: PayrollCalculatorPro
         </div>
       ) : null}
 
-      <DownloadPdfButton data={reportData} />
+      <DownloadPdfButton data={reportData} onDownloaded={saveCalculation} />
     </div>
   );
 }

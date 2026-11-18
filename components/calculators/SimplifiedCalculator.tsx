@@ -20,7 +20,7 @@ import { calculateSimplifiedTax } from "@/lib/simplified";
 import { simplifiedFormSchema } from "@/lib/schemas";
 import { formatPercent, formatTenge } from "@/lib/format";
 import { SIMPLIFIED_REGIONS, type SimplifiedRegionId } from "@/lib/tax-config-2026";
-import { useAutosaveCalculation } from "@/lib/hooks/useAutosaveCalculation";
+import { useSaveCalculation } from "@/lib/hooks/useSaveCalculation";
 import type { CalculationRow } from "@/lib/supabase/calculations";
 import { DownloadPdfButton } from "@/components/DownloadPdfButton";
 import type { ReportData } from "@/lib/reports/types";
@@ -82,7 +82,7 @@ export function SimplifiedCalculator({ initialData, onSaved }: SimplifiedCalcula
     employeesHalfYearPayroll,
   });
 
-  useAutosaveCalculation(
+  const saveCalculation = useSaveCalculation(
     "simplified",
     {
       incomeMode,
@@ -94,7 +94,7 @@ export function SimplifiedCalculator({ initialData, onSaved }: SimplifiedCalcula
       employeesHalfYearPayroll,
     },
     result,
-    { initialId: initialData?.id, onSaved }
+    { onSaved }
   );
 
   const rows: BreakdownRow[] = [
@@ -278,7 +278,7 @@ export function SimplifiedCalculator({ initialData, onSaved }: SimplifiedCalcula
           </AlertDescription>
         </Alert>
 
-        <DownloadPdfButton data={reportData} />
+        <DownloadPdfButton data={reportData} onDownloaded={saveCalculation} />
       </div>
     </div>
   );

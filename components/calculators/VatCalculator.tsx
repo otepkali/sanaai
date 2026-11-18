@@ -13,7 +13,7 @@ import {
 } from "@/lib/vat";
 import { vatFormSchema, vatThresholdFormSchema } from "@/lib/schemas";
 import { formatPercent, formatTenge } from "@/lib/format";
-import { useAutosaveCalculation } from "@/lib/hooks/useAutosaveCalculation";
+import { useSaveCalculation } from "@/lib/hooks/useSaveCalculation";
 import type { CalculationRow } from "@/lib/supabase/calculations";
 import { DownloadPdfButton } from "@/components/DownloadPdfButton";
 import type { ReportData } from "@/lib/reports/types";
@@ -50,11 +50,11 @@ export function VatCalculator({ initialData, onSaved }: VatCalculatorProps) {
   const threshold = checkVatRegistrationThreshold(turnover);
   const settlement = calculateVatSettlement({ inputVat, outputVat });
 
-  useAutosaveCalculation(
+  const saveCalculation = useSaveCalculation(
     "vat",
     { amount, mode, turnover, inputVat, outputVat },
     { result, threshold, settlement },
-    { initialId: initialData?.id, onSaved }
+    { onSaved }
   );
 
   const rows: BreakdownRow[] = [
@@ -210,7 +210,7 @@ export function VatCalculator({ initialData, onSaved }: VatCalculatorProps) {
           }
         />
 
-        <DownloadPdfButton data={reportData} />
+        <DownloadPdfButton data={reportData} onDownloaded={saveCalculation} />
       </div>
     </div>
   );
