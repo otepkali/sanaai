@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { subscriptionApiGuard } from "@/lib/billing/server";
 import { z } from "zod";
 import chromium from "@sparticuz/chromium";
 import puppeteer from "puppeteer-core";
@@ -47,6 +49,9 @@ const invoiceDataSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const guardResponse = await subscriptionApiGuard(await createClient());
+  if (guardResponse) return guardResponse;
+
   let json: unknown;
   try {
     json = await request.json();

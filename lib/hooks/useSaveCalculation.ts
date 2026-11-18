@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { formatDateLong } from "@/lib/format";
 import { upsertCalculation, type CalculationType } from "@/lib/supabase/calculations";
-import { useUser } from "./useUser";
+import { useSubscription } from "./useSubscription";
 
 const TYPE_LABELS: Record<CalculationType, string> = {
   fot: "ФОТ",
@@ -26,7 +26,7 @@ export interface UseSaveCalculationOptions {
 /**
  * Возвращает функцию, которая сохраняет текущий расчёт в историю пользователя.
  * Вызывается только после скачивания PDF — никакого автосохранения.
- * Молча ничего не делает, если пользователь не авторизован.
+ * Молча ничего не делает без входа в аккаунт или без активной подписки.
  */
 export function useSaveCalculation(
   type: CalculationType,
@@ -34,11 +34,11 @@ export function useSaveCalculation(
   result: unknown,
   options?: UseSaveCalculationOptions
 ) {
-  const { user } = useUser();
+  const { user, hasAccess } = useSubscription();
   const onSaved = options?.onSaved;
 
   return useCallback(async () => {
-    if (!user) return;
+    if (!user || !hasAccess) return;
     try {
       await upsertCalculation({
         id: null,
@@ -52,5 +52,5 @@ export function useSaveCalculation(
     } catch (error) {
       console.error("Не удалось сохранить расчёт", error);
     }
-  }, [user, type, input, result, onSaved]);
+  }, [user, hasAccess, type, input, result, onSaved]);
 }

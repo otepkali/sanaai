@@ -17,15 +17,17 @@ const PLANS = [
     ],
   },
   {
-    name: "С аккаунтом",
-    price: "0 ₸",
-    description: "Чтобы ничего не считать заново",
-    cta: { label: "Создать аккаунт", href: "/register" },
+    name: "Подписка",
+    price: "5 000 ₸ / мес",
+    description: "Для ТОО и ИП — одна цена. Первые 7 дней бесплатно",
+    cta: { label: "Попробовать 7 дней бесплатно", href: "/register" },
     highlighted: true,
     features: [
       "Всё из тарифа «Без регистрации»",
+      "Счета, АВР, накладные, доверенности, расчётные ведомости",
       "История скачанных расчётов и документов",
-      "АВР, счета, накладные, доверенности",
+      "Реквизиты компании подставляются автоматически",
+      "Отмена в любой момент",
     ],
   },
 ];
@@ -36,7 +38,7 @@ export function LandingPricing() {
       <div className="container">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl">Тарифы</h2>
-          <p className="mt-3 text-text-muted">Sana AI бесплатна — аккаунт просто открывает больше возможностей</p>
+          <p className="mt-3 text-text-muted">Калькуляторы бесплатны всегда. Документы и история — по подписке</p>
         </div>
 
         <div className="mx-auto mt-14 grid max-w-3xl gap-6 sm:grid-cols-2">

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, FileText, LogOut } from "lucide-react";
+import { ChevronDown, CreditCard, FileText, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export function UserMenu({ email }: { email: string }) {
@@ -38,6 +38,14 @@ export function UserMenu({ email }: { email: string }) {
           >
             <FileText className="h-4 w-4" />
             Мои реквизиты
+          </Link>
+          <Link
+            href="/billing"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text transition-colors hover:bg-surface-tint"
+          >
+            <CreditCard className="h-4 w-4" />
+            Подписка
           </Link>
           <button
             type="button"

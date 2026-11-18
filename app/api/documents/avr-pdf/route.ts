@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import chromium from "@sparticuz/chromium";
 import puppeteer from "puppeteer-core";
 import { createClient } from "@/lib/supabase/server";
+import { subscriptionApiGuard } from "@/lib/billing/server";
 import { getRequisitesServer, downloadCompanyFileServer } from "@/lib/supabase/requisites";
 import { avrDataSchema } from "@/lib/documents/schemas";
 import { EMPTY_REQUISITES } from "@/lib/documents/types";
@@ -29,6 +30,8 @@ export async function POST(request: Request) {
   if (!userData.user) {
     return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
   }
+  const guardResponse = await subscriptionApiGuard(supabase);
+  if (guardResponse) return guardResponse;
 
   let json: unknown;
   try {

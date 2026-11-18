@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
+import { subscriptionApiGuard } from "@/lib/billing/server";
 import { ensureFontWarmedUp } from "@/lib/pdf-fonts";
 import { getRequisitesServer, downloadCompanyFileServer } from "@/lib/supabase/requisites";
 import { generateDocumentSchema } from "@/lib/documents/schemas";
@@ -30,6 +31,8 @@ export async function POST(request: Request) {
   if (!userData.user) {
     return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
   }
+  const guardResponse = await subscriptionApiGuard(supabase);
+  if (guardResponse) return guardResponse;
 
   let json: unknown;
   try {

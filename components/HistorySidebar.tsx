@@ -14,7 +14,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useUser } from "@/lib/hooks/useUser";
+import Link from "next/link";
+import { useSubscription } from "@/lib/hooks/useSubscription";
 import {
   deleteCalculation,
   listCalculations,
@@ -39,19 +40,20 @@ export interface HistorySidebarProps {
 }
 
 export function HistorySidebar({ onRestore, refreshSignal }: HistorySidebarProps) {
-  const { user } = useUser();
+  const { user, hasAccess } = useSubscription();
   const [rows, setRows] = useState<CalculationRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpenOnMobile, setIsOpenOnMobile] = useState(false);
 
   const reload = useCallback(() => {
     setIsLoading(true);
-    const fetchPromise = user ? listCalculations(user.id) : Promise.resolve<CalculationRow[]>([]);
+    const fetchPromise =
+      user && hasAccess ? listCalculations(user.id) : Promise.resolve<CalculationRow[]>([]);
     fetchPromise
       .then(setRows)
       .catch((error) => console.error("Не удалось загрузить историю расчётов", error))
       .finally(() => setIsLoading(false));
-  }, [user]);
+  }, [user, hasAccess]);
 
   useEffect(() => {
     // Отложено на микрозадачу, чтобы reload (вызывающий setState) не считался
@@ -113,13 +115,20 @@ export function HistorySidebar({ onRestore, refreshSignal }: HistorySidebarProps
           </Button>
         </div>
 
-        {isLoading ? (
+        {!hasAccess ? (
+          <p className="text-xs text-text-muted">
+            История расчётов доступна по подписке.{" "}
+            <Link href="/billing" className="text-primary underline">
+              Попробовать 7 дней бесплатно
+            </Link>
+          </p>
+        ) : isLoading ? (
           <div className="flex justify-center py-8 text-text-muted">
             <Loader2 className="h-4 w-4 animate-spin" />
           </div>
         ) : grouped.length === 0 ? (
           <p className="text-xs text-text-muted">
-            Здесь появятся ваши расчёты — они сохраняются автоматически.
+            Здесь появятся ваши расчёты — они сохраняются при скачивании PDF.
           </p>
         ) : (
           <div className="space-y-4">

@@ -2,10 +2,12 @@ import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { RequisitesForm } from "@/components/documents/RequisitesForm";
 import { createClient } from "@/lib/supabase/server";
+import { requireSubscriptionPage } from "@/lib/billing/server";
 
 export default async function RequisitesPage() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
+  await requireSubscriptionPage(supabase, data.user?.id);
   const userEmail = data.user?.email ?? "";
 
   return (
