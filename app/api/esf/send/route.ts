@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { parseStringPromise } from "xml2js";
 import { createClient } from "@/lib/supabase/server";
+import { ESF_ENABLED } from "@/lib/esf/feature";
 import { esfDataSchema } from "@/lib/esf/schemas";
 
 const ESF_PROD_URL = "https://esf.gov.kz:8443/esf-web/rest/api/invoice/send";
@@ -32,6 +33,10 @@ async function describeError(response: Response): Promise<string> {
 }
 
 export async function POST(request: Request) {
+  if (!ESF_ENABLED) {
+    return NextResponse.json({ error: "Раздел ЭСФ временно недоступен" }, { status: 404 });
+  }
+
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;

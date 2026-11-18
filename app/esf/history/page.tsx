@@ -1,9 +1,13 @@
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { EsfHistoryClient } from "@/components/esf/EsfHistoryClient";
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ESF_ENABLED } from "@/lib/esf/feature";
 
 export default async function EsfHistoryPage() {
+  if (!ESF_ENABLED) notFound();
+
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   const userEmail = data.user?.email ?? "";

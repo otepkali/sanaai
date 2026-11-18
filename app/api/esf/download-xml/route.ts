@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { ESF_ENABLED } from "@/lib/esf/feature";
 import { esfDataSchema } from "@/lib/esf/schemas";
 import { generateEsfXml } from "@/lib/esf/generate-xml";
 
@@ -15,6 +16,10 @@ function buildContentDisposition(rawFilename: string): string {
 }
 
 export async function POST(request: Request) {
+  if (!ESF_ENABLED) {
+    return NextResponse.json({ error: "Раздел ЭСФ временно недоступен" }, { status: 404 });
+  }
+
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) {

@@ -12,7 +12,6 @@ const ACCOUNT_LINKS = [
   { href: "/login", label: "Войти" },
   { href: "/register", label: "Создать аккаунт" },
   { href: "/documents", label: "Документы" },
-  { href: "/accounting", label: "Учёт и ведомости" },
 ];
 
 export function LandingFooter() {

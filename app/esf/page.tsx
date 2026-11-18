@@ -1,11 +1,15 @@
 import { AppHeader } from "@/components/AppHeader";
 import { AppFooter } from "@/components/AppFooter";
 import { EsfForm } from "@/components/esf/EsfForm";
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ESF_ENABLED } from "@/lib/esf/feature";
 import { getRequisitesServer } from "@/lib/supabase/requisites";
 import { EMPTY_REQUISITES } from "@/lib/documents/types";
 
 export default async function EsfPage() {
+  if (!ESF_ENABLED) notFound();
+
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   const userEmail = data.user?.email ?? "";
