@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Download, Loader2, Plus, Save, X } from "lucide-react";
+import { Download, Loader2, Plus, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,12 @@ const createItem = (): EditableItem => ({
   price: 0,
 });
 
-export function AvrForm() {
+export interface AvrFormProps {
+  /** Вызывается после сохранения документа в историю */
+  onSaved?: () => void;
+}
+
+export function AvrForm({ onSaved }: AvrFormProps) {
   const { user } = useUser();
   const [documentNumber, setDocumentNumber] = useState("1");
   const [documentDate, setDocumentDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -47,7 +52,6 @@ export function AvrForm() {
   const [items, setItems] = useState<EditableItem[]>(() => [createItem()]);
 
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const documentNumberId = useId();
@@ -119,6 +123,7 @@ export function AvrForm() {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
+      saveToHistory();
     } catch {
       setMessage("Не удалось связаться с сервером. Попробуйте ещё раз.");
     } finally {
@@ -126,23 +131,16 @@ export function AvrForm() {
     }
   }
 
-  async function handleSaveToHistory() {
+  function saveToHistory() {
     if (!user) return;
-    setIsSaving(true);
-    setMessage(null);
-    try {
-      await saveDocument({
-        userId: user.id,
-        type: "avr",
-        title: `АВР № ${documentNumber || "—"} от ${documentDate}`,
-        data: buildData(),
-      });
-      setMessage("Сохранено в историю");
-    } catch {
-      setMessage("Не удалось сохранить в историю");
-    } finally {
-      setIsSaving(false);
-    }
+    saveDocument({
+      userId: user.id,
+      type: "avr",
+      title: `АВР № ${documentNumber || "—"} от ${documentDate}`,
+      data: buildData(),
+    })
+      .then(() => onSaved?.())
+      .catch((error) => console.error("Не удалось сохранить документ в историю", error));
   }
 
   return (
@@ -353,10 +351,6 @@ export function AvrForm() {
               <Button onClick={handleDownload} disabled={isDownloading} className="gap-2">
                 {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 Скачать PDF
-              </Button>
-              <Button onClick={handleSaveToHistory} disabled={isSaving} variant="outline" className="gap-2">
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Сохранить в историю
               </Button>
             </div>
           </CardContent>

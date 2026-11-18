@@ -10,11 +10,12 @@ export interface DocumentRow {
   created_at: string;
 }
 
-export async function listDocuments(): Promise<DocumentRow[]> {
+export async function listDocuments(userId: string): Promise<DocumentRow[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("accounting_documents")
     .select("*")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;

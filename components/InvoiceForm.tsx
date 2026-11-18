@@ -28,6 +28,7 @@ import { calculateInvoiceTotals, formatMoney } from "@/lib/invoice/calc";
 import type { InvoiceData, InvoiceItem, VatMode } from "@/lib/invoice/types";
 import { formatTenge } from "@/lib/format";
 import { useUser } from "@/lib/hooks/useUser";
+import { saveDocument } from "@/lib/supabase/documents";
 import { getRequisites } from "@/lib/supabase/requisites";
 
 interface EditableItem extends InvoiceItem {
@@ -64,7 +65,12 @@ function useSuggestedInvoiceNumber(): string {
   return useSyncExternalStore(noopSubscribe, readSuggestedInvoiceNumber, () => "1");
 }
 
-export function InvoiceForm() {
+export interface InvoiceFormProps {
+  /** Вызывается после сохранения счёта в историю документов */
+  onSaved?: () => void;
+}
+
+export function InvoiceForm({ onSaved }: InvoiceFormProps = {}) {
   const [items, setItems] = useState<EditableItem[]>(() => [createItem()]);
   const [isVatPayer, setIsVatPayer] = useState(true);
   const [vatMode, setVatMode] = useState<VatMode>("inclusive");
@@ -178,10 +184,11 @@ export function InvoiceForm() {
     setDownloadError(null);
     setIsDownloading(true);
     try {
+      const invoiceData = buildInvoiceData();
       const response = await fetch("/api/invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildInvoiceData()),
+        body: JSON.stringify(invoiceData),
       });
 
       if (!response.ok) {
@@ -200,6 +207,17 @@ export function InvoiceForm() {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
+
+      if (user) {
+        saveDocument({
+          userId: user.id,
+          type: "invoice",
+          title: `Счёт № ${number || "—"} от ${date}`,
+          data: invoiceData,
+        })
+          .then(() => onSaved?.())
+          .catch((error) => console.error("Не удалось сохранить счёт в историю", error));
+      }
 
       localStorage.setItem(LAST_INVOICE_NUMBER_KEY, number);
       setNumberOverride(nextInvoiceNumber(number));

@@ -1,6 +1,7 @@
-export type DocumentType = "avr" | "poa" | "payroll" | "waybill";
+export type DocumentType = "invoice" | "avr" | "poa" | "payroll" | "waybill";
 
 export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
+  invoice: "Счёт на оплату",
   avr: "АВР (Р-1)",
   poa: "Доверенность (Д-1)",
   payroll: "Расчётная ведомость (Т-1)",

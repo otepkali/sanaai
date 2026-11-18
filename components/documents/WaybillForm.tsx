@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Download, Loader2, Plus, Save, X } from "lucide-react";
+import { Download, Loader2, Plus, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,12 @@ const createItem = (): EditableItem => ({
   vatSum: 0,
 });
 
-export function WaybillForm() {
+export interface WaybillFormProps {
+  /** Вызывается после сохранения документа в историю */
+  onSaved?: () => void;
+}
+
+export function WaybillForm({ onSaved }: WaybillFormProps) {
   const { user } = useUser();
   const [documentNumber, setDocumentNumber] = useState("1");
   const [documentDate, setDocumentDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -52,7 +57,6 @@ export function WaybillForm() {
   const [items, setItems] = useState<EditableItem[]>(() => [createItem()]);
 
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   function updateItem(id: number, patch: Partial<EditableItem>) {
@@ -126,6 +130,7 @@ export function WaybillForm() {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
+      saveToHistory();
     } catch {
       setMessage("Не удалось связаться с сервером. Попробуйте ещё раз.");
     } finally {
@@ -133,23 +138,16 @@ export function WaybillForm() {
     }
   }
 
-  async function handleSaveToHistory() {
+  function saveToHistory() {
     if (!user) return;
-    setIsSaving(true);
-    setMessage(null);
-    try {
-      await saveDocument({
-        userId: user.id,
-        type: "waybill",
-        title: `Накладная № ${documentNumber || "—"} от ${documentDate}`,
-        data: buildData(),
-      });
-      setMessage("Сохранено в историю");
-    } catch {
-      setMessage("Не удалось сохранить в историю");
-    } finally {
-      setIsSaving(false);
-    }
+    saveDocument({
+      userId: user.id,
+      type: "waybill",
+      title: `Накладная № ${documentNumber || "—"} от ${documentDate}`,
+      data: buildData(),
+    })
+      .then(() => onSaved?.())
+      .catch((error) => console.error("Не удалось сохранить документ в историю", error));
   }
 
   const numberId = useId();
@@ -311,10 +309,6 @@ export function WaybillForm() {
               <Button onClick={handleDownload} disabled={isDownloading} className="gap-2">
                 {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 Скачать PDF
-              </Button>
-              <Button onClick={handleSaveToHistory} disabled={isSaving} variant="outline" className="gap-2">
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Сохранить в историю
               </Button>
             </div>
           </CardContent>

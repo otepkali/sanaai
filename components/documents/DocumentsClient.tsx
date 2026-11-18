@@ -10,12 +10,15 @@ import { AvrForm } from "@/components/documents/AvrForm";
 import { PoaForm } from "@/components/documents/PoaForm";
 import { WaybillForm } from "@/components/documents/WaybillForm";
 import { PayrollSheetForm } from "@/components/documents/PayrollSheetForm";
+import { DocumentHistory } from "@/components/documents/DocumentHistory";
 
 const TAB_TRIGGER_CLASS =
   "rounded-md px-3 py-1.5 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm";
 
 export function DocumentsClient() {
   const [activeTab, setActiveTab] = useState("invoice");
+  const [historySignal, setHistorySignal] = useState(0);
+  const bumpHistory = () => setHistorySignal((n) => n + 1);
 
   return (
     <div>
@@ -48,21 +51,23 @@ export function DocumentsClient() {
         </TabsList>
 
         <TabsContent value="invoice" className="mt-6">
-          <InvoiceForm />
+          <InvoiceForm onSaved={bumpHistory} />
         </TabsContent>
         <TabsContent value="avr" className="mt-6">
-          <AvrForm />
+          <AvrForm onSaved={bumpHistory} />
         </TabsContent>
         <TabsContent value="poa" className="mt-6">
-          <PoaForm />
+          <PoaForm onSaved={bumpHistory} />
         </TabsContent>
         <TabsContent value="payroll" className="mt-6">
-          <PayrollSheetForm />
+          <PayrollSheetForm onSaved={bumpHistory} />
         </TabsContent>
         <TabsContent value="waybill" className="mt-6">
-          <WaybillForm />
+          <WaybillForm onSaved={bumpHistory} />
         </TabsContent>
       </Tabs>
+
+      <DocumentHistory refreshSignal={historySignal} />
     </div>
   );
 }
